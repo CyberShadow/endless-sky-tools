@@ -1,0 +1,257 @@
+import ae.utils.array;
+import ae.utils.math;
+import ae.utils.meta;
+import ae.utils.text;
+
+import std.algorithm.comparison;
+import std.algorithm.iteration;
+import std.algorithm.sorting;
+import std.conv;
+import std.random;
+import std.range;
+import std.stdio;
+import std.string;
+import std.traits;
+
+import shipdata;
+
+enum maxOutfits = 64;
+
+immutable ShipData shipData;
+shared static this() { shipData = cast(immutable)getShipData(); }
+
+alias ItemIndex = uint;
+
+// enum ComputedAttribute : Attribute
+// {
+// 	_first = EnumLength!Attribute,
+// 	maxSpeed = _first,
+// }
+
+// struct Parameters
+// {
+// }
+
+alias Score = long;
+
+struct Config
+{
+	ItemIndex[maxOutfits] items;
+	size_t numItems;
+	Item stats;
+
+	void add(ItemIndex itemIndex)
+	{
+		assert(numItems < maxOutfits);
+		immutable Item* item = &shipData.items[itemIndex];
+		foreach (attr, value; item.attributes)
+			stats.attributes[attr] += item.attributes[attr];
+		items[numItems++] = itemIndex;
+	}
+
+	void remove(size_t configIndex)
+	{
+		assert(configIndex > 0 && configIndex < numItems);
+		auto itemIndex = items[configIndex];
+		immutable Item* item = &shipData.items[itemIndex];
+		foreach (attr, value; item.attributes)
+			stats.attributes[attr] -= item.attributes[attr];
+		items[configIndex] = items[numItems-1];
+		numItems--;
+	}
+
+	/// Check whether any parameter is over capacity.
+	/// This shouldn't return false if some component (power, steering) hasn't been added yet.
+	bool isOK() const
+	{
+		if (stats.attributes[Attribute.cargoSpace    ] < 0) return false;
+		if (stats.attributes[Attribute.outfitSpace   ] < 0) return false;
+		if (stats.attributes[Attribute.weaponCapacity] < 0) return false;
+		if (stats.attributes[Attribute.engineCapacity] < 0) return false;
+		if (stats.attributes[Attribute.gunPorts      ] < 0) return false;
+		if (stats.attributes[Attribute.turretMounts  ] < 0) return false;
+		return true;
+	}
+
+	bool canAdd(ItemIndex index) const
+	{
+		Config newConfig = this;
+		newConfig.add(index);
+		return newConfig.isOK;
+	}
+
+	int maxSpeed() const
+	{
+		return 60 * stats.attributes[Attribute.thrust] / stats.attributes[Attribute.drag];
+	}
+
+	int acceleration() const
+	{
+		return 3600 * stats.attributes[Attribute.thrust] / stats.attributes[Attribute.mass]
+			/ attributeMultiplier[Attribute.thrust] / attributeMultiplier[Attribute.mass];
+	}
+
+	int turnSpeed() const
+	{
+		return 60 * stats.attributes[Attribute.turn] / stats.attributes[Attribute.mass]
+			/ attributeMultiplier[Attribute.turn] / attributeMultiplier[Attribute.mass];
+	}
+
+	int movementEnergy() const
+	{
+		return stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy];
+	}
+
+	Score score() const
+	{
+		Score score;
+
+		if (!stats.attributes[Attribute.hyperdrive])
+			score -= 1_000_000_000;
+
+		if (movementEnergy > stats.attributes[Attribute.energyGeneration]) // TODO capacity
+			score -= 1_000_000_000;
+
+		auto accScore = this.acceleration * 5;
+		score += ilog2(accScore) * 1_000_000 + accScore;
+
+		auto turnScore = this.turnSpeed * 10;
+		score += ilog2(turnScore) * 1_000_000 + turnScore;
+
+		return score;
+	}
+}
+
+void main()
+{
+	Score bestScore;
+
+	while (true)
+	{
+		Config config;
+		config.add(uniform(0, shipData.numShips));
+		Score score = config.score;
+
+		uint iterations;
+		enum maxIterations = 1000;
+		while (iterations < maxIterations)
+		{
+			auto newConfig = config;
+			foreach (n; 0..uniform(0, 3))
+				if (newConfig.numItems > 1)
+					newConfig.remove(uniform(1, newConfig.numItems));
+			foreach (n; 0..uniform(0, 3))
+				if (newConfig.numItems < maxOutfits)
+					newConfig.add(uniform(shipData.numShips, cast(ItemIndex)shipData.items.length));
+			if (newConfig.isOK)
+			{
+				auto newScore = newConfig.score;
+				if (score < newScore)
+				{
+					config = newConfig;
+					score = newScore;
+					iterations = 0;
+				}
+			}
+			iterations++;
+		}
+
+		if (bestScore < score)
+		{
+			bestScore = score;
+			writeln("\n\n############################################################################################################################################\n");
+			printConfig(config);
+		}
+		//else { write("."); stdout.flush(); }
+	}
+}
+
+bool showAttribute(Attribute attr)
+{
+	switch (attr)
+	{
+		case Attribute.drag:
+		case Attribute.hyperdrive:
+			return false;
+		default:
+			return true;
+	}
+}
+
+
+void printConfig(in ref Config inConfig)
+{
+	Config config = inConfig;
+	config.items[1..config.numItems].sort();
+
+	writefln("%d/%d outfits:", config.numItems, maxOutfits);
+	string[][] table;
+	table ~= null;
+	table ~= ["name"] ~ [EnumMembers!Attribute].filter!showAttribute.map!(a => attributeNames[a]).map!minWrap.array;
+	table ~= null;
+	foreach (item; config.items[0..config.numItems])
+		table ~= [shipData.items[item].name] ~ [EnumMembers!Attribute].filter!showAttribute.map!(a => shipData.items[item].attributes[a].I!(n => n ? formatAttribute(a, n) : "")).array;
+	table ~= null;
+	table ~= ["Total"] ~ [EnumMembers!Attribute].filter!showAttribute.map!(a => formatAttribute(a, config.stats.attributes[a])).array;
+	table ~= null;
+	printTable(table);
+
+	writeln();
+	table = [[], ["attribute", "value"], []];
+	table ~= ["max speed", numberToString(config.maxSpeed)];
+	table ~= ["acceleration", numberToString(config.acceleration)];
+	table ~= ["turn speed", numberToString(config.turnSpeed)];
+	table ~= null;
+	table ~= ["score", numberToString(config.score)];
+	table ~= null;
+	printTable(table);
+}
+
+string formatAttribute(Attribute attr, int value)
+{
+	return isFractional(attr)
+		? numberToString(double(value) / fractionalMultiplier)
+		: value.to!string;
+}
+
+string minWrap(string s)
+{
+	return s.wrap(s.split.map!(s => s.length).fold!max);
+}
+
+void printTable(string[][] table)
+{
+	// Convert newlines in table cells into multiple rows
+	table = table
+		.map!(row => row is null ? [(string[]).init] : row
+			.map!(cell => cell.splitLines.length)
+			.fold!max(size_t.init)
+			.I!(maxLines =>
+				maxLines
+				.iota
+				.map!(line =>
+					row
+					.map!(cell => cell.splitLines.get(line, null))
+					.array
+				)
+				.array
+			)
+		)
+		.join.
+		array;
+
+	auto columnWidths = table.filter!identity.front.length.iota.map!(column => table.filter!identity.map!(row => row[column].length).fold!max).array;
+	foreach (row; table)
+	{
+		write("|");
+		foreach (column, columnWidth; columnWidths)
+			if (row)
+				if (column > 0)
+					writef(" %*s |", columnWidth, row[column]);
+				else
+					writef(" %-*s |", columnWidth, row[column]);
+			else
+				writef("%s%s", '-'.repeat(columnWidth+2), column+1 == columnWidths.length ? "|" : "+");
+		writeln();
+	}
+}
