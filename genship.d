@@ -178,6 +178,9 @@ void main()
 	Xorshift rng;
 	rng.seed(unpredictableSeed);
 
+	auto numOutfits = shipData.items.length - shipData.numShips;
+	auto maxIterations = numOutfits * numOutfits;
+
 	Score bestScore;
 
 	while (true)
@@ -187,7 +190,6 @@ void main()
 		Score score = config.score;
 
 		uint iterations;
-		enum maxIterations = 1000;
 		while (iterations < maxIterations)
 		{
 			auto newConfig = config;
