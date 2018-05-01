@@ -72,6 +72,12 @@ struct Decimal(uint digits, Base = long)
 
 	string toString() const
 	{
+		if (rawValue == Base.max)
+			return "∞";
+		static if (isSigned!Base)
+			if (rawValue == Base.min)
+				return "-∞";
+
 		Base v = rawValue;
 		string sign;
 		if (v < 0)
@@ -166,6 +172,9 @@ struct Decimal(uint digits, Base = long)
 	{
 		return this.rawValue - Decimal(b).rawValue;
 	}
+
+	enum min = makeRaw(Base.min);
+	enum max = makeRaw(Base.max);
 }
 
 unittest

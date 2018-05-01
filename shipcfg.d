@@ -15,6 +15,7 @@ import std.range;
 import std.stdio;
 import std.string;
 import std.traits;
+import std.utf;
 
 import shipdata;
 
@@ -118,8 +119,26 @@ struct Config
 		return shieldEnergy * shieldGeneration;
 	}
 
+	Value idleEnergy() const @nogc { return shieldEnergyPerFrame; }
 	Value movementEnergy() const @nogc { return stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy]; }
-	Value battleEnergy() const @nogc { return stats.attributes[Attribute.firingEnergy] + shieldEnergyPerFrame; }
+	Value battleEnergy() const @nogc { return stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.firingEnergy] + shieldEnergyPerFrame; }
+
+	// # of frames we can perform this activity without running out of juice
+	Value energyDuration(Value consumption) const @nogc
+	{
+		auto drain = consumption - stats.attributes[Attribute.energyGeneration];
+		if (drain <= 0)
+			return Value.max;
+		return stats.attributes[Attribute.energyCapacity] / drain;
+	}
+
+	Value energyRechargeDuration() const @nogc
+	{
+		auto charge = stats.attributes[Attribute.energyGeneration] - idleEnergy;
+		if (charge <= 0)
+			return Value.max;
+		return stats.attributes[Attribute.energyCapacity] / charge;
+	}
 
 	// int coolingEfficiency() const @nogc
 	// {
@@ -182,9 +201,11 @@ struct Config
 		}
 
 		sanityCheck(stats.attributes[Attribute.hyperdrive], v => v > 0, "hyperdrive");
-		sanityCheck(movementEnergy, v => v < stats.attributes[Attribute.energyGeneration], "movement energy"); // TODO capacity
+
 		cb("shield energy / frame", ()=>shieldEnergyPerFrame.text, 0);
-		sanityCheck(battleEnergy, v => v < stats.attributes[Attribute.energyGeneration], "battle energy"); // TODO capacity
+		sanityCheck(energyDuration(movementEnergy), v => v > 60 * 30, "movement energy duration");
+		sanityCheck(energyDuration(battleEnergy), v => v > 60 * 10, "battle energy duration");
+		sanityCheck(energyRechargeDuration, v => v < 60 * 5, "energy recharge duration");
 
 		cb("maximum heat", ()=>maximumHeat.text, 0);
 		cb("idle heat", ()=>idleHeat.text, 0);
@@ -259,7 +280,7 @@ void printConfig(in ref Config inConfig)
 
 	writeln();
 	table = [[], ["stat", "value", "score"], []];
-	struct Printer { void opCall(lazy string name, scope string delegate() value, Score scoreDelta) { table ~= [name, value(), scoreDelta.text]; } }
+	struct Printer { void opCall(lazy string name, scope string delegate() value, Score scoreDelta) { table ~= [name, value(), scoreDelta ? scoreDelta.text : "-"]; } }
 	Printer printer; config.calcScore(printer);
 	table ~= null;
 	table ~= ["total", null, numberToString(config.score)];
@@ -305,16 +326,16 @@ void printTable(string[][] table)
 		.join.
 		array;
 
-	auto columnWidths = table.filter!identity.front.length.iota.map!(column => table.filter!identity.map!(row => row[column].length).fold!max).array;
+	auto columnWidths = table.filter!identity.front.length.iota.map!(column => table.filter!identity.map!(row => row[column].byDchar.walkLength).fold!max).array;
 	foreach (row; table)
 	{
 		write("|");
 		foreach (column, columnWidth; columnWidths)
 			if (row)
 				if (column > 0)
-					writef(" %*s |", columnWidth, row[column]);
+					writef(" %*s |", columnWidth, row[column].to!dstring);
 				else
-					writef(" %-*s |", columnWidth, row[column]);
+					writef(" %-*s |", columnWidth, row[column].to!dstring);
 			else
 				writef("%s%s", '-'.repeat(columnWidth+2), column+1 == columnWidths.length ? "|" : "+");
 		writeln();
