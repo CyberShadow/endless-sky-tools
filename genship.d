@@ -44,8 +44,7 @@ struct Config
 	{
 		assert(numItems < maxOutfits);
 		immutable Item* item = &shipData.items[itemIndex];
-		foreach (attr, value; item.attributes)
-			stats.attributes[attr] += item.attributes[attr];
+		stats.attributes[] += item.attributes[];
 		items[numItems++] = itemIndex;
 	}
 
@@ -54,10 +53,8 @@ struct Config
 		assert(configIndex > 0 && configIndex < numItems);
 		auto itemIndex = items[configIndex];
 		immutable Item* item = &shipData.items[itemIndex];
-		foreach (attr, value; item.attributes)
-			stats.attributes[attr] -= item.attributes[attr];
-		items[configIndex] = items[numItems-1];
-		numItems--;
+		stats.attributes[] -= item.attributes[];
+		items[configIndex] = items[--numItems];
 	}
 
 	/// Check whether any parameter is over capacity.
