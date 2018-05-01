@@ -125,11 +125,11 @@ ShipData getShipData()
 			if (auto pReload = "reload" in *pWeapon)
 			{
 				if (auto pSD = "shield damage" in *pWeapon)
-					item.attributes[Attribute.shieldDamage] = (pSD.value.to!float / pReload.value.to!float * 100).to!int;
+					item.attributes[Attribute.shieldDamage] = Value(pSD.value) / Value(pReload.value);
 				if (auto pFE = "firing energy" in *pWeapon)
-					item.attributes[Attribute.firingEnergy] = (pFE.value.to!float / pReload.value.to!float * 100).to!int;
+					item.attributes[Attribute.firingEnergy] = Value(pFE.value) / Value(pReload.value);
 				if (auto pFE = "firing heat" in *pWeapon)
-					item.attributes[Attribute.firingHeat  ] = (pFE.value.to!float / pReload.value.to!float * 100).to!int;
+					item.attributes[Attribute.firingHeat  ] = Value(pFE.value) / Value(pReload.value);
 			}
 		}
 		result.items ~= item;
