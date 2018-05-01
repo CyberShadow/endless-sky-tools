@@ -147,9 +147,11 @@ struct Config
 	// 	return 2. + 2. / (1. + exp(x / -2.)) - 4. / (1. + exp(x / -4.));
 	// }
 
-	Value idleHeat(Value extraHeat = 0) const @nogc
+	/// Given this constant heat generation, what heat energy
+	/// (temperature*mass) will the ship settle on after an infinite
+	/// amount of time?
+	Value targetHeat(Value heatGeneration) const @nogc
 	{
-		auto heatGeneration = stats.attributes[Attribute.heatGeneration] + extraHeat;
 		auto heatDissipation = .001 * stats.attributes[Attribute.heatDissipation].to!double;
 
 		// This ship's cooling ability:
@@ -162,12 +164,27 @@ struct Config
 		// heat = heat * (diss - activeCool / (100 * mass)) + (heatGen - cool)
 		// heat * (1 - diss + activeCool / (100 * mass)) = (heatGen - cool)
 		double production = max(0, (heatGeneration - cooling).to!double);
-		double dissipation = heatDissipation /*+ activeCooling / maximumHeat*/;
+		double dissipation = heatDissipation /*+ activeCooling / maxHeat*/;
 		return Value(production / dissipation);
 	}
 
-	Value maximumHeat() const @nogc
+	Value idleHeatGeneration() const @nogc
 	{
+		return stats.attributes[Attribute.heatGeneration]
+			+ stats.attributes[Attribute.shieldHeat]
+		//	+ stats.attributes[Attribute.hullHeat]
+		;
+	}
+
+	Value idleHeat() const @nogc
+	{
+		return targetHeat(idleHeatGeneration);
+	}
+
+	/// Ship::MaximumHeat
+	Value maxHeat() const @nogc
+	{
+		enum MAXIMUM_TEMPERATURE = 100;
 		return stats.attributes[Attribute.mass] * 100;
 	}
 
@@ -209,16 +226,14 @@ struct Config
 		sanityCheck("pursue energy duration", energyDuration(pursueEnergy), v => v > 60 * 5);
 		sanityCheck("energy recharge duration", energyRechargeDuration, v => v < 60 * 5);
 
-		cb("maximum heat", ()=>maximumHeat.text, 0);
+		cb("maximum heat", ()=>maxHeat.text, 0);
 		cb("idle heat", ()=>idleHeat.text, 0);
 
-		sanityCheck("extra outfits space", stats.attributes[Attribute.outfitSpace], v => v >= 1);
+		auto movementHeat = targetHeat(idleHeatGeneration + stats.attributes[Attribute.thrustingHeat] + stats.attributes[Attribute.turningHeat]);
+		sanityCheck("movement heat", movementHeat, v => v < maxHeat);
 
-		auto movementHeat = idleHeat(stats.attributes[Attribute.thrustingHeat] + stats.attributes[Attribute.turningHeat]);
-		sanityCheck("movement heat", movementHeat, v => v < maximumHeat);
-
-		auto battleHeat = idleHeat(stats.attributes[Attribute.firingHeat] + stats.attributes[Attribute.shieldHeat]);
-		sanityCheck("battle heat", battleHeat, v => v < maximumHeat);
+		auto battleHeat = targetHeat(idleHeatGeneration + stats.attributes[Attribute.firingHeat] + stats.attributes[Attribute.shieldHeat]);
+		sanityCheck("battle heat", battleHeat, v => v < maxHeat);
 
 		sanityCheck("acceleration", acceleration, v => v >= 400);
 		cb("acceleration", ()=>acceleration.text, scale(acceleration, 2_500_000));
@@ -231,6 +246,8 @@ struct Config
 
 		auto shieldGeneration = stats.attributes[Attribute.shieldGeneration];
 		cb("shield generation", ()=>shieldGeneration.text, scale(shieldGeneration, 2_500_000));
+
+		sanityCheck("extra outfits space", stats.attributes[Attribute.outfitSpace], v => v >= 1);
 
 		auto cost = stats.attributes[Attribute.cost];
 		cb("cost", ()=>cost.text, -cost.to!int / 2000);
