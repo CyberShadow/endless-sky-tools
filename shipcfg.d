@@ -62,6 +62,20 @@ struct Config
 		items[configIndex] = items[--numItems];
 	}
 
+	debug(config)
+	invariant
+	{
+		Item checkStats;
+		foreach (configIndex; 0..numItems)
+		{
+			auto itemIndex = items[configIndex];
+			immutable Item* item = &shipData.items[itemIndex];
+			foreach (a, value; item.attributes)
+				checkStats.attributes[a] += value;
+		}
+		assert(checkStats == stats);
+	}
+
 	/// Check whether any parameter is over capacity.
 	/// This shouldn't return false if some component (power, steering) hasn't been added yet.
 	bool isOK() const
