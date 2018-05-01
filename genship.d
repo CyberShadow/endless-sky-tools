@@ -132,19 +132,20 @@ struct Config
 
 	Score score() const @nogc
 	{
-		Score score;
-
-		void fun(lazy string name, scope string delegate() value, Score scoreDelta)
+		static struct Collector
 		{
-			score += scoreDelta;
+			Score score;
+			void opCall(lazy string name, scope string delegate() value, Score scoreDelta) @nogc
+			{
+				score += scoreDelta;
+			}
 		}
-
-		Config.calcScore!fun(this);
-
-		return score;
+		Collector collector;
+		calcScore(collector);
+		return collector.score;
 	}
 
-	static void calcScore(alias cb)(in ref Config config) const
+	void calcScore(T)(ref T cb) const
 	{
 		void sanityCheck(bool condition, string description)
 		{
@@ -153,20 +154,21 @@ struct Config
 			else
 				cb(description, ()=>"FAIL", -1_000_000_000);
 		}
-		sanityCheck(config.stats.attributes[Attribute.hyperdrive] > 0, "hyperdrive present");
-		sanityCheck(config.movementEnergy < config.stats.attributes[Attribute.energyGeneration], "movement energy"); // TODO capacity
-		sanityCheck(config.stats.attributes[Attribute.firingEnergy] < config.stats.attributes[Attribute.energyGeneration], "firing energy"); // TODO capacity
 
-		auto accScore = config.acceleration * 5;
-		cb("acceleration", ()=>config.acceleration.text, ilog2(accScore) * 1_000_000 + accScore);
+		sanityCheck(stats.attributes[Attribute.hyperdrive] > 0, "hyperdrive present");
+		sanityCheck(movementEnergy < stats.attributes[Attribute.energyGeneration], "movement energy"); // TODO capacity
+		sanityCheck(stats.attributes[Attribute.firingEnergy] < stats.attributes[Attribute.energyGeneration], "firing energy"); // TODO capacity
 
-		auto turnScore = config.turnSpeed * 10;
-		cb("turning", ()=>config.turnSpeed.text, ilog2(turnScore) * 1_000_000 + turnScore);
+		auto accScore = acceleration * 5;
+		cb("acceleration", ()=>acceleration.text, ilog2(accScore) * 1_000_000 + accScore);
 
-		auto shieldDamage = config.stats.attributes[Attribute.shieldDamage];
+		auto turnScore = turnSpeed * 10;
+		cb("turning", ()=>turnSpeed.text, ilog2(turnScore) * 1_000_000 + turnScore);
+
+		auto shieldDamage = stats.attributes[Attribute.shieldDamage];
 		cb("shield damage", ()=>shieldDamage.text, shieldDamage * 2_000);
 
-		auto cost = config.stats.attributes[Attribute.cost];
+		auto cost = stats.attributes[Attribute.cost];
 		cb("cost", ()=>cost.text, -cost / 10);
 	}
 }
@@ -247,7 +249,8 @@ void printConfig(in ref Config inConfig)
 
 	writeln();
 	table = [[], ["attribute", "value", "score"], []];
-	Config.calcScore!((lazy string name, scope string delegate() value, Score scoreDelta) { table ~= [name, value(), scoreDelta.text]; })(config);
+	struct Printer { void opCall(lazy string name, scope string delegate() value, Score scoreDelta) { table ~= [name, value(), scoreDelta.text]; } }
+	Printer printer; config.calcScore(printer);
 	table ~= null;
 	table ~= ["total", null, numberToString(config.score)];
 	table ~= null;
