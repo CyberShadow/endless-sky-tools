@@ -137,7 +137,7 @@ struct Decimal(uint digits, Base = long)
 	Decimal opOpAssign(string op)(Decimal b) @nogc
 	if (op == q{+} || op == q{-})
 	{
-		rawValue += b.rawValue;
+		mixin(q{rawValue} ~ op ~ q{=b.rawValue;});
 		return this;
 	}
 
@@ -173,4 +173,6 @@ unittest
 	assert(d + d == 6);
 	assert(d * d == 9);
 	assert(d / d == 1);
+	d -= Decimal!2(1);
+	assert(d == 2);
 }
