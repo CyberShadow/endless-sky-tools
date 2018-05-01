@@ -102,6 +102,13 @@ struct Config
 		return stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy];
 	}
 
+	Value shieldEnergyPerFrame() const @nogc
+	{
+		auto shieldEnergy = stats.attributes[Attribute.shieldEnergy]; // per unit of shields!
+		auto shieldGeneration = stats.attributes[Attribute.shieldGeneration]; // per frame
+		return shieldEnergy * shieldGeneration;
+	}
+
 	// int coolingEfficiency() const @nogc
 	// {
 	// 	double x = stats.attributes[Attribute.coolingInefficiency];
@@ -159,7 +166,9 @@ struct Config
 
 		sanityCheck(stats.attributes[Attribute.hyperdrive] > 0, "hyperdrive present?");
 		sanityCheck(movementEnergy < stats.attributes[Attribute.energyGeneration], "movement energy ok?"); // TODO capacity
-		auto battleEnergy = stats.attributes[Attribute.firingEnergy] + stats.attributes[Attribute.shieldEnergy];
+		cb("shield energy / frame", ()=>shieldEnergyPerFrame.text, 0);
+		auto battleEnergy = stats.attributes[Attribute.firingEnergy] + shieldEnergyPerFrame;
+		cb("battle energy", ()=>battleEnergy.text, 0);
 		sanityCheck(battleEnergy < stats.attributes[Attribute.energyGeneration], "battle energy ok?"); // TODO capacity
 
 		cb("maximum heat", ()=>maximumHeat.text, 0);

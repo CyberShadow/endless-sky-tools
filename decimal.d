@@ -104,6 +104,12 @@ struct Decimal(uint digits, Base = long)
 	}
 
 	Decimal opBinary(string op)(Decimal b) const @nogc
+	if (op == q{*})
+	{
+		return makeRaw(mixin(q{(rawValue} ~ op ~ q{b.rawValue) / factor}));
+	}
+
+	Decimal opBinary(string op)(Decimal b) const @nogc
 	if (op == q{/})
 	{
 		return makeRaw(mixin(q{(rawValue * factor)} ~ op ~ q{b.rawValue}));
@@ -128,6 +134,16 @@ struct Decimal(uint digits, Base = long)
 		return this;
 	}
 
+	bool opEquals(Decimal b) const @nogc
+	{
+		return this.rawValue == b.rawValue;
+	}
+
+	bool opEquals(Base b) const @nogc
+	{
+		return this.rawValue == Decimal(b).rawValue;
+	}
+
 	Base opCmp(Decimal b) const @nogc
 	{
 		return this.rawValue - b.rawValue;
@@ -142,8 +158,12 @@ struct Decimal(uint digits, Base = long)
 unittest
 {
 	auto d = Decimal!2("1");
+	assert(d == 1);
 	d += Decimal!2("2");
+	assert(d == 3);
 	assert(d > 0);
-	auto e = 60 * d;
-	auto f = d + e;
+	assert(2 * d == 6);
+	assert(d + d == 6);
+	assert(d * d == 9);
+	assert(d / d == 1);
 }
