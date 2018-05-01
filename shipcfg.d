@@ -154,6 +154,13 @@ struct Config
 		return collector.score;
 	}
 
+	enum defaultCurve = 0.8;
+	static int scale(double val, int multiplier, double curve = defaultCurve) @nogc
+	{
+		return cast(int)(log(E + val) * multiplier);
+	}
+	static int scale(Value val, int multiplier, double curve = defaultCurve) @nogc { return scale(val.to!double, multiplier, curve); }
+
 	void calcScore(T)(ref T cb) const
 	{
 		void sanityCheck(bool condition, string description)
@@ -182,15 +189,15 @@ struct Config
 		cb("battle heat", ()=>battleHeat.text, 0);
 		sanityCheck(battleHeat < maximumHeat, "battle heat ok?");
 
-		cb("acceleration", ()=>acceleration.text, cast(int)(log(acceleration.to!double) * 2_500_000));
+		cb("acceleration", ()=>acceleration.text, scale(acceleration, 2_500_000));
 
-		cb("turning", ()=>turnSpeed.text, cast(int)(log(turnSpeed.to!double) * 2_000_000));
+		cb("turning", ()=>turnSpeed.text, scale(turnSpeed, 2_000_000));
 
 		auto shieldDamage = stats.attributes[Attribute.shieldDamage];
-		cb("shield damage", ()=>shieldDamage.text, cast(int)(log(shieldDamage.to!double)) * 1_000_000);
+		cb("shield damage", ()=>shieldDamage.text, scale(shieldDamage, 1_000_000));
 
 		auto shieldGeneration = stats.attributes[Attribute.shieldGeneration];
-		cb("shield generation", ()=>shieldGeneration.text, cast(int)(log(shieldGeneration.to!double) * 500_000));
+		cb("shield generation", ()=>shieldGeneration.text, scale(shieldGeneration, 2_500_000));
 
 		auto cost = stats.attributes[Attribute.cost];
 		cb("cost", ()=>cost.text, -cost.to!int / 2000);

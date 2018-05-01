@@ -66,7 +66,14 @@ struct Decimal(uint digits, Base = long)
 
 	string toString() const
 	{
-		auto str = rawValue.to!string;
+		Base v = rawValue;
+		string sign;
+		if (v < 0)
+		{
+			v = -v;
+			sign = "-";
+		}
+		auto str = v.to!string;
 		while (str.length < digits+1)
 			str = "0" ~ str;
 		str = str[0..$-digits] ~ "." ~ str[$-digits..$];
@@ -75,7 +82,7 @@ struct Decimal(uint digits, Base = long)
 				str = str[0..$-1];
 			else
 				break;
-		return str;
+		return sign ~ str;
 	}
 
 	bool opCast(T)() const
