@@ -266,6 +266,7 @@ string abbrevAttr(string s)
 {
 	return s
 		.replace("thrusting ", "thrust ")
+		.replace("turning ", "turn ")
 		.replace(" capacity", " cap.")
 		.replace(" generation", " gen.")
 		.replace(" inefficiency", " ineff.")
