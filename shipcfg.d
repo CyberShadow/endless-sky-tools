@@ -127,7 +127,7 @@ struct Config
 	// 	return 2. + 2. / (1. + exp(x / -2.)) - 4. / (1. + exp(x / -4.));
 	// }
 
-	int idleHeat(Value extraHeat = 0) const @nogc
+	Value idleHeat(Value extraHeat = 0) const @nogc
 	{
 		auto heatGeneration = stats.attributes[Attribute.heatGeneration] + extraHeat;
 		auto heatDissipation = .001 * stats.attributes[Attribute.heatDissipation].to!double;
@@ -143,7 +143,7 @@ struct Config
 		// heat * (1 - diss + activeCool / (100 * mass)) = (heatGen - cool)
 		double production = max(0, (heatGeneration - cooling).to!double);
 		double dissipation = heatDissipation /*+ activeCooling / maximumHeat*/;
-		return cast(int)(production / dissipation);
+		return Value(production / dissipation);
 	}
 
 	Value maximumHeat() const @nogc
@@ -175,32 +175,27 @@ struct Config
 
 	void calcScore(T)(ref T cb) const
 	{
-		void sanityCheck(bool condition, string description)
+		void sanityCheck(Value value, scope bool delegate(Value) @nogc condition, string description)
 		{
-			if (condition)
-				cb(description, ()=>"ok", 0);
-			else
-				cb(description, ()=>"FAIL", -1_000_000_000);
+			auto ok = condition(value);
+			cb(description, ()=>"[%s] %s".format(ok ? "ok" : "FAIL", value), ok ? 0 : -1_000_000_000);
 		}
 
-		sanityCheck(stats.attributes[Attribute.hyperdrive] > 0, "hyperdrive present?");
-		sanityCheck(movementEnergy < stats.attributes[Attribute.energyGeneration], "movement energy ok?"); // TODO capacity
+		sanityCheck(stats.attributes[Attribute.hyperdrive], v => v > 0, "hyperdrive");
+		sanityCheck(movementEnergy, v => v < stats.attributes[Attribute.energyGeneration], "movement energy"); // TODO capacity
 		cb("shield energy / frame", ()=>shieldEnergyPerFrame.text, 0);
-		cb("battle energy", ()=>battleEnergy.text, 0);
-		sanityCheck(battleEnergy < stats.attributes[Attribute.energyGeneration], "battle energy ok?"); // TODO capacity
+		sanityCheck(battleEnergy, v => v < stats.attributes[Attribute.energyGeneration], "battle energy"); // TODO capacity
 
 		cb("maximum heat", ()=>maximumHeat.text, 0);
 		cb("idle heat", ()=>idleHeat.text, 0);
 
-		sanityCheck(stats.attributes[Attribute.outfitSpace] >= 1, "extra outfits space");
+		sanityCheck(stats.attributes[Attribute.outfitSpace], v => v >= 1, "extra outfits space");
 
 		auto movementHeat = idleHeat(stats.attributes[Attribute.thrustingHeat] + stats.attributes[Attribute.turningHeat]);
-		cb("movement heat", ()=>movementHeat.text, 0);
-		sanityCheck(movementHeat < maximumHeat, "movement heat ok?");
+		sanityCheck(movementHeat, v => v < maximumHeat, "movement heat");
 
 		auto battleHeat = idleHeat(stats.attributes[Attribute.firingHeat] + stats.attributes[Attribute.shieldHeat]);
-		cb("battle heat", ()=>battleHeat.text, 0);
-		sanityCheck(battleHeat < maximumHeat, "battle heat ok?");
+		sanityCheck(battleHeat, v => v < maximumHeat, "battle heat");
 
 		cb("acceleration", ()=>acceleration.text, scale(acceleration, 2_500_000));
 

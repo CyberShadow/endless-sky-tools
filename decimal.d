@@ -46,6 +46,12 @@ struct Decimal(uint digits, Base = long)
 		opAssign(s);
 	}
 
+	this(R)(R value)
+	if (is(R : real) && !is(R : long))
+	{
+		rawValue = cast(Base)(value * factor);
+	}
+
 	T to(T)() const @nogc
 	if (is(T : real) && !is(T : long))
 	{
