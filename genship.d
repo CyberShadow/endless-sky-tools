@@ -236,7 +236,7 @@ void printConfig(in ref Config inConfig)
 	writefln("%d/%d outfits:", config.numItems, maxOutfits);
 	string[][] table;
 	table ~= null;
-	table ~= ["name"] ~ [EnumMembers!Attribute].filter!showAttribute.map!(a => attributeNames[a]).map!minWrap.array;
+	table ~= ["name"] ~ [EnumMembers!Attribute].filter!showAttribute.map!(a => attributeNames[a]).map!abbrevAttr.map!minWrap.array;
 	table ~= null;
 	foreach (item; config.items[0..config.numItems])
 		table ~= [shipData.items[item].name] ~ [EnumMembers!Attribute].filter!showAttribute.map!(a => shipData.items[item].attributes[a].I!(n => n ? formatAttribute(a, n) : "")).array;
@@ -252,6 +252,17 @@ void printConfig(in ref Config inConfig)
 	table ~= ["total", null, numberToString(config.score)];
 	table ~= null;
 	printTable(table);
+}
+
+string abbrevAttr(string s)
+{
+	return s
+		.replace("thrusting ", "thrust ")
+		.replace(" capacity", " cap.")
+		.replace(" generation", " gen.")
+		.replace(" inefficiency", " ineff.")
+		.replace(" dissipation", " diss.")
+	;
 }
 
 string formatAttribute(Attribute attr, int value)
