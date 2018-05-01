@@ -77,7 +77,7 @@ bool isFractional(Attribute attr)
 	}
 }
 
-int[enumLength!Attribute] attributeMultiplier = ()
+immutable int[enumLength!Attribute] attributeMultiplier = ()
 {
 	int[] arr;
 	foreach (e; RangeTuple!(enumLength!Attribute))
