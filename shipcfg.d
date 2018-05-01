@@ -111,17 +111,15 @@ struct Config
 		return 60 * stats.attributes[Attribute.turn] / stats.attributes[Attribute.mass];
 	}
 
-	Value movementEnergy() const @nogc
-	{
-		return stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy];
-	}
-
 	Value shieldEnergyPerFrame() const @nogc
 	{
 		auto shieldEnergy = stats.attributes[Attribute.shieldEnergy]; // per unit of shields!
 		auto shieldGeneration = stats.attributes[Attribute.shieldGeneration]; // per frame
 		return shieldEnergy * shieldGeneration;
 	}
+
+	Value movementEnergy() const @nogc { return stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy]; }
+	Value battleEnergy() const @nogc { return stats.attributes[Attribute.firingEnergy] + shieldEnergyPerFrame; }
 
 	// int coolingEfficiency() const @nogc
 	// {
@@ -188,12 +186,13 @@ struct Config
 		sanityCheck(stats.attributes[Attribute.hyperdrive] > 0, "hyperdrive present?");
 		sanityCheck(movementEnergy < stats.attributes[Attribute.energyGeneration], "movement energy ok?"); // TODO capacity
 		cb("shield energy / frame", ()=>shieldEnergyPerFrame.text, 0);
-		auto battleEnergy = stats.attributes[Attribute.firingEnergy] + shieldEnergyPerFrame;
 		cb("battle energy", ()=>battleEnergy.text, 0);
 		sanityCheck(battleEnergy < stats.attributes[Attribute.energyGeneration], "battle energy ok?"); // TODO capacity
 
 		cb("maximum heat", ()=>maximumHeat.text, 0);
 		cb("idle heat", ()=>idleHeat.text, 0);
+
+		sanityCheck(stats.attributes[Attribute.outfitSpace] >= 1, "extra outfits space");
 
 		auto movementHeat = idleHeat(stats.attributes[Attribute.thrustingHeat] + stats.attributes[Attribute.turningHeat]);
 		cb("movement heat", ()=>movementHeat.text, 0);
@@ -208,7 +207,7 @@ struct Config
 		cb("turning", ()=>turnSpeed.text, scale(turnSpeed, 2_000_000));
 
 		auto shieldDamage = stats.attributes[Attribute.shieldDamage];
-		cb("shield damage", ()=>shieldDamage.text, scale(shieldDamage, 1_000_000));
+		cb("shield damage", ()=>shieldDamage.text, scale(shieldDamage, 2_000_000));
 
 		auto shieldGeneration = stats.attributes[Attribute.shieldGeneration];
 		cb("shield generation", ()=>shieldGeneration.text, scale(shieldGeneration, 2_500_000));
