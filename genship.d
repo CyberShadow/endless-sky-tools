@@ -6,6 +6,7 @@ import std.random;
 import std.range;
 import std.stdio;
 
+import savewriter;
 import shipcfg;
 import shipdata;
 
@@ -63,6 +64,7 @@ void main()
 			writeln("\n\n############################################################################################################################################\n");
 			printConfig(config);
 			config.save("genship.json");
+			createSave(`/home/vladimir/Sync-PC/saves/endless-sky/saves/Test Drive.txt`, [config]);
 		}
 		//else { write("."); stdout.flush(); }
 	}

@@ -3,6 +3,7 @@ import std.algorithm.iteration;
 import std.algorithm.searching;
 import std.exception;
 import std.file;
+import std.range.primitives;
 import std.stdio;
 import std.string;
 
@@ -20,6 +21,10 @@ class Node
 		enforce(pair.value.children.length == 0);
 		return pair.key;
 	}
+	bool isValue() { return children.length == 1 && children.byValue.front.children.length == 0; }
+
+	string onlyChildName() { enforce(children.length == 1); return children.byKey.front; }
+	Node onlyChild() { enforce(children.length == 1); return children.byValue.front; }
 
 	Node opIndex(string s) { return children[s]; }
 	override string toString() { return format("%-(%s%)", children.byKeyValue.map!(kv => format("%(%s%)", [kv.key]) ~ "\n" ~ kv.value.toString().indent())); }
