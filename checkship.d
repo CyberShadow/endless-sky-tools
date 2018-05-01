@@ -5,6 +5,9 @@ import shipcfg;
 
 void main(string[] args)
 {
-	auto config = Config.load(args[1]);
-	printConfig(config);
+	foreach (fn; args[1..$])
+	{
+		auto config = Config.load(fn);
+		printConfig(config);
+	}
 }
