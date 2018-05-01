@@ -175,12 +175,15 @@ struct Config
 
 void main()
 {
+	Xorshift rng;
+	rng.seed(unpredictableSeed);
+
 	Score bestScore;
 
 	while (true)
 	{
 		Config config;
-		config.add(uniform(0, shipData.numShips));
+		config.add(uniform(0, shipData.numShips, rng));
 		Score score = config.score;
 
 		uint iterations;
@@ -188,12 +191,12 @@ void main()
 		while (iterations < maxIterations)
 		{
 			auto newConfig = config;
-			foreach (n; 0..uniform(0, 3))
+			foreach (n; 0..uniform(0, 3, rng))
 				if (newConfig.numItems > 1)
-					newConfig.remove(uniform(1, newConfig.numItems));
-			foreach (n; 0..uniform(0, 3))
+					newConfig.remove(uniform(1, newConfig.numItems, rng));
+			foreach (n; 0..uniform(0, 3, rng))
 				if (newConfig.numItems < maxOutfits)
-					newConfig.add(uniform(shipData.numShips, cast(ItemIndex)shipData.items.length));
+					newConfig.add(uniform(shipData.numShips, cast(ItemIndex)shipData.items.length, rng));
 			if (newConfig.isOK)
 			{
 				auto newScore = newConfig.score;
