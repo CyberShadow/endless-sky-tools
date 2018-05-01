@@ -1,12 +1,15 @@
 import ae.utils.array;
+import ae.utils.json;
 import ae.utils.math;
 import ae.utils.meta;
 import ae.utils.text;
 
 import std.algorithm.comparison;
 import std.algorithm.iteration;
+import std.algorithm.searching;
 import std.algorithm.sorting;
 import std.conv;
+import std.file;
 import std.math;
 import std.range;
 import std.stdio;
@@ -182,6 +185,21 @@ struct Config
 
 		auto cost = stats.attributes[Attribute.cost];
 		cb("cost", ()=>cost.text, -cost / 2000);
+	}
+
+	void save(string fn)
+	{
+		auto data = items[0..numItems].map!(item => shipData.items[item].name).array;
+		data.toPrettyJson.toFile(fn);
+	}
+
+	static Config load(string fn)
+	{
+		Config config;
+		auto data = fn.readText.jsonParse!(string[]);
+		foreach (name; data)
+			config.add(shipData.items.countUntil!(i => i.name == name).to!ItemIndex);
+		return config;
 	}
 }
 

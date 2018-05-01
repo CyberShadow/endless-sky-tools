@@ -47,6 +47,7 @@ void main()
 			bestScore = score;
 			writeln("\n\n############################################################################################################################################\n");
 			printConfig(config);
+			config.save("genship.json");
 		}
 		//else { write("."); stdout.flush(); }
 	}
