@@ -36,8 +36,10 @@ enum Attribute
 	gunPorts,
 	turretMounts,
 	hyperdrive,
-	shieldDamage,
 	firingEnergy,
+	firingHeat,
+	shieldDamage,
+//	hullDamage,
 
 //	hull,
 //	hullRepairRate,
@@ -68,6 +70,8 @@ bool isFractional(Attribute attr)
 		case Attribute.energyGeneration:
 		case Attribute.heatGeneration:
 		case Attribute.cooling:
+		case Attribute.firingEnergy:
+		case Attribute.firingHeat:
 		case Attribute.shieldDamage:
 		case Attribute.shieldGeneration:
 		case Attribute.shieldEnergy:
@@ -169,9 +173,11 @@ ShipData getShipData()
 			if (auto pReload = "reload" in *pWeapon)
 			{
 				if (auto pSD = "shield damage" in *pWeapon)
-					item.attributes[Attribute.shieldDamage] = (pSD.value.to!float / pReload.value.to!float * 100).to!int; //.numberToString.parseFrac;
+					item.attributes[Attribute.shieldDamage] = (pSD.value.to!float / pReload.value.to!float * 100).to!int;
 				if (auto pFE = "firing energy" in *pWeapon)
 					item.attributes[Attribute.firingEnergy] = (pFE.value.to!float / pReload.value.to!float * 100).to!int;
+				if (auto pFE = "firing heat" in *pWeapon)
+					item.attributes[Attribute.firingHeat  ] = (pFE.value.to!float / pReload.value.to!float * 100).to!int;
 			}
 		}
 		result.items ~= item;
