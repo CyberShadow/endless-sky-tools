@@ -194,29 +194,29 @@ struct Config
 
 	void calcScore(T)(ref T cb) const
 	{
-		void sanityCheck(Value value, scope bool delegate(Value) @nogc condition, string description)
+		void sanityCheck(string description, Value value, scope bool delegate(Value) @nogc condition)
 		{
 			auto ok = condition(value);
 			cb(description, ()=>"[%s] %s".format(ok ? "ok" : "FAIL", value), ok ? 0 : -1_000_000_000);
 		}
 
-		sanityCheck(stats.attributes[Attribute.hyperdrive], v => v > 0, "hyperdrive");
+		sanityCheck("hyperdrive", stats.attributes[Attribute.hyperdrive], v => v > 0);
 
 		cb("shield energy / frame", ()=>shieldEnergyPerFrame.text, 0);
-		sanityCheck(energyDuration(movementEnergy), v => v > 60 * 30, "movement energy duration");
-		sanityCheck(energyDuration(battleEnergy), v => v > 60 * 10, "battle energy duration");
-		sanityCheck(energyRechargeDuration, v => v < 60 * 5, "energy recharge duration");
+		sanityCheck("movement energy duration", energyDuration(movementEnergy), v => v > 60 * 30);
+		sanityCheck("battle energy duration", energyDuration(battleEnergy), v => v > 60 * 10);
+		sanityCheck("energy recharge duration", energyRechargeDuration, v => v < 60 * 5);
 
 		cb("maximum heat", ()=>maximumHeat.text, 0);
 		cb("idle heat", ()=>idleHeat.text, 0);
 
-		sanityCheck(stats.attributes[Attribute.outfitSpace], v => v >= 1, "extra outfits space");
+		sanityCheck("extra outfits space", stats.attributes[Attribute.outfitSpace], v => v >= 1);
 
 		auto movementHeat = idleHeat(stats.attributes[Attribute.thrustingHeat] + stats.attributes[Attribute.turningHeat]);
-		sanityCheck(movementHeat, v => v < maximumHeat, "movement heat");
+		sanityCheck("movement heat", movementHeat, v => v < maximumHeat);
 
 		auto battleHeat = idleHeat(stats.attributes[Attribute.firingHeat] + stats.attributes[Attribute.shieldHeat]);
-		sanityCheck(battleHeat, v => v < maximumHeat, "battle heat");
+		sanityCheck("battle heat", battleHeat, v => v < maximumHeat);
 
 		cb("acceleration", ()=>acceleration.text, scale(acceleration, 2_500_000));
 
