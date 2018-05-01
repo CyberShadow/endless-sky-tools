@@ -120,8 +120,9 @@ struct Config
 	}
 
 	Value idleEnergy() const @nogc { return shieldEnergyPerFrame; }
-	Value movementEnergy() const @nogc { return stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy]; }
-	Value battleEnergy() const @nogc { return stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.firingEnergy] + shieldEnergyPerFrame; }
+	Value movementEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy]; }
+	Value battleEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.firingEnergy]; }
+	Value pursueEnergy() const @nogc { return battleEnergy + stats.attributes[Attribute.thrustingEnergy]; }
 
 	// # of frames we can perform this activity without running out of juice
 	Value energyDuration(Value consumption) const @nogc
@@ -205,6 +206,7 @@ struct Config
 		cb("shield energy / frame", ()=>shieldEnergyPerFrame.text, 0);
 		sanityCheck("movement energy duration", energyDuration(movementEnergy), v => v > 60 * 30);
 		sanityCheck("battle energy duration", energyDuration(battleEnergy), v => v > 60 * 10);
+		sanityCheck("pursue energy duration", energyDuration(pursueEnergy), v => v > 60 * 5);
 		sanityCheck("energy recharge duration", energyRechargeDuration, v => v < 60 * 5);
 
 		cb("maximum heat", ()=>maximumHeat.text, 0);
@@ -218,8 +220,10 @@ struct Config
 		auto battleHeat = idleHeat(stats.attributes[Attribute.firingHeat] + stats.attributes[Attribute.shieldHeat]);
 		sanityCheck("battle heat", battleHeat, v => v < maximumHeat);
 
+		sanityCheck("acceleration", acceleration, v => v >= 400);
 		cb("acceleration", ()=>acceleration.text, scale(acceleration, 2_500_000));
 
+		sanityCheck("turning", turnSpeed, v => v >= 160);
 		cb("turning", ()=>turnSpeed.text, scale(turnSpeed, 2_000_000));
 
 		auto shieldDamage = stats.attributes[Attribute.shieldDamage];
