@@ -119,9 +119,9 @@ ShipData getShipData()
 		{
 			if ("ammo" in *pWeapon)
 				continue; // TODO: tons / cost of ammo per unit of time / damage?
-			if (auto pVelocity = "velocity" in *pWeapon)
-				if (pVelocity.value.to!float < 100)
-					continue; // TODO
+			// if (auto pVelocity = "velocity" in *pWeapon)
+			// 	if (pVelocity.value.to!float < 100)
+			// 		continue; // TODO
 			if (auto pReload = "reload" in *pWeapon)
 			{
 				if (auto pSD = "shield damage" in *pWeapon)
