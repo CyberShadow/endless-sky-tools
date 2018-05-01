@@ -123,6 +123,7 @@ struct Config
 	Value movementEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy]; }
 	Value battleEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.firingEnergy]; }
 	Value pursueEnergy() const @nogc { return battleEnergy + stats.attributes[Attribute.thrustingEnergy]; }
+	Value fullEnergy() const @nogc { return movementEnergy + stats.attributes[Attribute.firingEnergy]; }
 
 	// # of frames we can perform this activity without running out of juice
 	Value energyDuration(Value consumption) const @nogc
@@ -133,12 +134,17 @@ struct Config
 		return stats.attributes[Attribute.energyCapacity] / drain;
 	}
 
-	Value energyRechargeDuration() const @nogc
+	// How fast do we drain energy (at full utilization) vs. recharge energy (at idle)?
+	Value energyChargeRatio() const @nogc
 	{
+		auto idleEnergy = this.idleEnergy;
+		auto drain = fullEnergy - stats.attributes[Attribute.energyGeneration];
+		if (drain <= 0)
+			return Value.max;
 		auto charge = stats.attributes[Attribute.energyGeneration] - idleEnergy;
 		if (charge <= 0)
-			return Value.max;
-		return stats.attributes[Attribute.energyCapacity] / charge;
+			return Value(0);
+		return charge / drain;
 	}
 
 	// int coolingEfficiency() const @nogc
@@ -224,7 +230,8 @@ struct Config
 		sanityCheck("movement energy duration", energyDuration(movementEnergy), v => v > 60 * 30);
 		sanityCheck("battle energy duration", energyDuration(battleEnergy), v => v > 60 * 10);
 		sanityCheck("pursue energy duration", energyDuration(pursueEnergy), v => v > 60 * 5);
-		sanityCheck("energy recharge duration", energyRechargeDuration, v => v < 60 * 5);
+		cb("energy capacity", ()=>stats.attributes[Attribute.energyCapacity].text, scale(stats.attributes[Attribute.energyCapacity], 200_000));
+		sanityCheck("energy charge ratio", energyChargeRatio, v => v * 10 > 15);
 
 		cb("maximum heat", ()=>maxHeat.text, 0);
 		cb("idle heat", ()=>idleHeat.text, 0);
