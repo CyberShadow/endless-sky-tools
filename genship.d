@@ -105,20 +105,22 @@ struct Config
 	// 	return 2. + 2. / (1. + exp(x / -2.)) - 4. / (1. + exp(x / -4.));
 	// }
 
-	int idleHeat() const @nogc
+	int idleHeat(double extraHeat = 0) const @nogc
 	{
+		auto heatGeneration = stats.attrFP!(Attribute.heatGeneration) + extraHeat;
+		auto heatDissipation = .001 * stats.attrFP!(Attribute.heatDissipation);
+
 		// This ship's cooling ability:
-		// double coolingEfficiency = coolingEfficiency();
-		auto coolingEfficiency = 1;
-		auto cooling = stats.attributes[Attribute.cooling];
+		/*double*/auto coolingEfficiency = /*coolingEfficiency()*/1;
+		auto cooling = stats.attrFP!(Attribute.cooling);
 		//double activeCooling = coolingEfficiency * attributes.Get("active cooling");
 
 		// Idle heat is the heat level where:
 		// heat = heat * diss + heatGen - cool - activeCool * heat / (100 * mass)
 		// heat = heat * (diss - activeCool / (100 * mass)) + (heatGen - cool)
 		// heat * (1 - diss + activeCool / (100 * mass)) = (heatGen - cool)
-		double production = max(0, stats.attributes[Attribute.heatGeneration] - cooling);
-		double dissipation = stats.attributes[Attribute.heatDissipation] /*+ activeCooling / maximumHeat*/;
+		double production = max(0, heatGeneration - cooling);
+		double dissipation = heatDissipation /*+ activeCooling / maximumHeat*/;
 		return cast(int)(production / dissipation);
 	}
 
@@ -152,9 +154,20 @@ struct Config
 				cb(description, ()=>"FAIL", -1_000_000_000);
 		}
 
-		sanityCheck(stats.attributes[Attribute.hyperdrive] > 0, "hyperdrive present");
-		sanityCheck(movementEnergy < stats.attributes[Attribute.energyGeneration], "movement energy"); // TODO capacity
-		sanityCheck(stats.attributes[Attribute.firingEnergy] < stats.attributes[Attribute.energyGeneration], "firing energy"); // TODO capacity
+		sanityCheck(stats.attributes[Attribute.hyperdrive] > 0, "hyperdrive present?");
+		sanityCheck(movementEnergy < stats.attributes[Attribute.energyGeneration], "movement energy ok?"); // TODO capacity
+		sanityCheck(stats.attributes[Attribute.firingEnergy] < stats.attributes[Attribute.energyGeneration], "firing energy ok?"); // TODO capacity
+
+		cb("maximum heat", ()=>maximumHeat.text, 0);
+		cb("idle heat", ()=>idleHeat.text, 0);
+
+		auto movementHeat = idleHeat(stats.attrFP!(Attribute.thrustingHeat) + stats.attrFP!(Attribute.turningHeat));
+		cb("movement heat", ()=>movementHeat.text, 0);
+		sanityCheck(movementHeat < maximumHeat, "movement heat ok?");
+
+		auto firingHeat = idleHeat(stats.attrFP!(Attribute.firingHeat));
+		cb("firing heat", ()=>firingHeat.text, 0);
+		sanityCheck(firingHeat < maximumHeat, "firing heat ok?");
 
 		auto accScore = acceleration * 5;
 		cb("acceleration", ()=>acceleration.text, ilog2(accScore) * 1_000_000 + accScore);

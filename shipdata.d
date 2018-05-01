@@ -32,6 +32,7 @@ enum Attribute
 	energyGeneration,
 	heatGeneration,
 	cooling,
+	activeCooling,
 	coolingInefficiency,
 	gunPorts,
 	turretMounts,
@@ -131,6 +132,11 @@ struct Item
 					attributes[attr] = value.to!int;
 			}
 		}
+	}
+
+	double attrFP(Attribute attribute)() const
+	{
+		return attributes[attribute] * double(attributeMultiplier[attribute]);
 	}
 }
 
