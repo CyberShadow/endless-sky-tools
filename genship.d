@@ -7,6 +7,7 @@ import std.algorithm.comparison;
 import std.algorithm.iteration;
 import std.algorithm.sorting;
 import std.conv;
+import std.math;
 import std.random;
 import std.range;
 import std.stdio;
@@ -85,13 +86,13 @@ struct Config
 	int acceleration() const @nogc
 	{
 		return 3600 * stats.attributes[Attribute.thrust] / stats.attributes[Attribute.mass]
-			/ attributeMultiplier[Attribute.thrust] / attributeMultiplier[Attribute.mass];
+			/ (attributeMultiplier[Attribute.thrust] / attributeMultiplier[Attribute.mass]);
 	}
 
 	int turnSpeed() const @nogc
 	{
 		return 60 * stats.attributes[Attribute.turn] / stats.attributes[Attribute.mass]
-			/ attributeMultiplier[Attribute.turn] / attributeMultiplier[Attribute.mass];
+			/ (attributeMultiplier[Attribute.turn] / attributeMultiplier[Attribute.mass]);
 	}
 
 	int movementEnergy() const @nogc
@@ -156,7 +157,8 @@ struct Config
 
 		sanityCheck(stats.attributes[Attribute.hyperdrive] > 0, "hyperdrive present?");
 		sanityCheck(movementEnergy < stats.attributes[Attribute.energyGeneration], "movement energy ok?"); // TODO capacity
-		sanityCheck(stats.attributes[Attribute.firingEnergy] < stats.attributes[Attribute.energyGeneration], "firing energy ok?"); // TODO capacity
+		auto battleEnergy = stats.attributes[Attribute.firingEnergy] + stats.attributes[Attribute.shieldEnergy];
+		sanityCheck(battleEnergy < stats.attributes[Attribute.energyGeneration], "battle energy ok?"); // TODO capacity
 
 		cb("maximum heat", ()=>maximumHeat.text, 0);
 		cb("idle heat", ()=>idleHeat.text, 0);
@@ -165,21 +167,22 @@ struct Config
 		cb("movement heat", ()=>movementHeat.text, 0);
 		sanityCheck(movementHeat < maximumHeat, "movement heat ok?");
 
-		auto firingHeat = idleHeat(stats.attrFP!(Attribute.firingHeat));
-		cb("firing heat", ()=>firingHeat.text, 0);
-		sanityCheck(firingHeat < maximumHeat, "firing heat ok?");
+		auto battleHeat = idleHeat(stats.attrFP!(Attribute.firingHeat) + stats.attrFP!(Attribute.shieldHeat));
+		cb("battle heat", ()=>battleHeat.text, 0);
+		sanityCheck(battleHeat < maximumHeat, "battle heat ok?");
 
-		auto accScore = acceleration * 5;
-		cb("acceleration", ()=>acceleration.text, ilog2(accScore) * 1_000_000 + accScore);
+		cb("acceleration", ()=>acceleration.text, cast(int)(log(acceleration) * 2_500_000));
 
-		auto turnScore = turnSpeed * 10;
-		cb("turning", ()=>turnSpeed.text, ilog2(turnScore) * 1_000_000 + turnScore);
+		cb("turning", ()=>turnSpeed.text, cast(int)(log(turnSpeed) * 2_000_000));
 
 		auto shieldDamage = stats.attributes[Attribute.shieldDamage];
-		cb("shield damage", ()=>shieldDamage.text, shieldDamage * 2_000);
+		cb("shield damage", ()=>shieldDamage.text, cast(int)(log(shieldDamage)) * 1_000_000);
+
+		auto shieldGeneration = stats.attributes[Attribute.shieldGeneration];
+		cb("shield generation", ()=>shieldGeneration.text, cast(int)(log(shieldGeneration) * 500_000));
 
 		auto cost = stats.attributes[Attribute.cost];
-		cb("cost", ()=>cost.text, -cost / 10);
+		cb("cost", ()=>cost.text, -cost / 2000);
 	}
 }
 
