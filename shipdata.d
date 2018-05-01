@@ -32,10 +32,23 @@ enum Attribute
 	energyGeneration,
 	heatGeneration,
 	cooling,
+	coolingInefficiency,
 	gunPorts,
 	turretMounts,
 	hyperdrive,
 	shieldDamage,
+	firingEnergy,
+
+//	hull,
+//	hullRepairRate,
+//	hullEnergy,
+//	hullHeat,
+
+//	shield,
+	shieldGeneration,
+	shieldEnergy,
+	shieldHeat, // heat per unit of shields repaired
+
 }
 
 enum fractionalMultiplier = 100;
@@ -56,6 +69,8 @@ bool isFractional(Attribute attr)
 		case Attribute.heatGeneration:
 		case Attribute.cooling:
 		case Attribute.shieldDamage:
+		case Attribute.shieldGeneration:
+		case Attribute.shieldEnergy:
 			return true;
 		default:
 			return false;
@@ -82,12 +97,13 @@ private int parseFrac(string s)
 {
 	auto parts = s.findSplit(".");
 	auto intPart = parts[0];
+	int sign = intPart.skipOver("-") ? -1 : 1;
 	if (!intPart.length)
 		intPart = "0";
 	auto fracPart = parts[2];
 	enforce(fracPart.length <= 2, "Too little precision: " ~ s);
 	while (fracPart.length < 2) fracPart ~= "0";
-	return intPart.to!int * fractionalMultiplier + fracPart.to!int;
+	return (intPart.to!int * fractionalMultiplier + fracPart.to!int) * sign;
 }
 
 struct Item
@@ -144,9 +160,20 @@ ShipData getShipData()
 		auto item = Item(name);
 		item.fromAttributes(node);
 		if (auto pWeapon = "weapon" in node)
-			if (auto pSD = "shield damage" in *pWeapon)
-				if (auto pReload = "reload" in *pWeapon)
-					item.attributes[Attribute.shieldDamage] = (pSD.value.to!float / pReload.value.to!float * 100).numberToString.parseFrac;
+		{
+			if ("ammo" in *pWeapon)
+				continue; // TODO: tons / cost of ammo per unit of time / damage?
+			if (auto pVelocity = "velocity" in *pWeapon)
+				if (pVelocity.value.to!float < 100)
+					continue; // TODO
+			if (auto pReload = "reload" in *pWeapon)
+			{
+				if (auto pSD = "shield damage" in *pWeapon)
+					item.attributes[Attribute.shieldDamage] = (pSD.value.to!float / pReload.value.to!float * 100).to!int; //.numberToString.parseFrac;
+				if (auto pFE = "firing energy" in *pWeapon)
+					item.attributes[Attribute.firingEnergy] = (pFE.value.to!float / pReload.value.to!float * 100).to!int;
+			}
+		}
 		result.items ~= item;
 	}
 	return result;

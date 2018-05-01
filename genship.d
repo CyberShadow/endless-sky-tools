@@ -80,45 +80,94 @@ struct Config
 		return newConfig.isOK;
 	}
 
-	int maxSpeed() const
+	int maxSpeed() const @nogc
 	{
 		return 60 * stats.attributes[Attribute.thrust] / stats.attributes[Attribute.drag];
 	}
 
-	int acceleration() const
+	int acceleration() const @nogc
 	{
 		return 3600 * stats.attributes[Attribute.thrust] / stats.attributes[Attribute.mass]
 			/ attributeMultiplier[Attribute.thrust] / attributeMultiplier[Attribute.mass];
 	}
 
-	int turnSpeed() const
+	int turnSpeed() const @nogc
 	{
 		return 60 * stats.attributes[Attribute.turn] / stats.attributes[Attribute.mass]
 			/ attributeMultiplier[Attribute.turn] / attributeMultiplier[Attribute.mass];
 	}
 
-	int movementEnergy() const
+	int movementEnergy() const @nogc
 	{
 		return stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy];
 	}
 
-	Score score() const
+	// int coolingEfficiency() const @nogc
+	// {
+	// 	double x = stats.attributes[Attribute.coolingInefficiency];
+	// 	return 2. + 2. / (1. + exp(x / -2.)) - 4. / (1. + exp(x / -4.));
+	// }
+
+	int idleHeat() const @nogc
+	{
+		// This ship's cooling ability:
+		// double coolingEfficiency = coolingEfficiency();
+		auto coolingEfficiency = 1;
+		auto cooling = stats.attributes[Attribute.cooling];
+		//double activeCooling = coolingEfficiency * attributes.Get("active cooling");
+
+		// Idle heat is the heat level where:
+		// heat = heat * diss + heatGen - cool - activeCool * heat / (100 * mass)
+		// heat = heat * (diss - activeCool / (100 * mass)) + (heatGen - cool)
+		// heat * (1 - diss + activeCool / (100 * mass)) = (heatGen - cool)
+		double production = max(0, stats.attributes[Attribute.heatGeneration] - cooling);
+		double dissipation = stats.attributes[Attribute.heatDissipation] /*+ activeCooling / maximumHeat*/;
+		return cast(int)(production / dissipation);
+	}
+
+	int maximumHeat() const @nogc
+	{
+		return stats.attributes[Attribute.mass] * 100;
+	}
+
+	Score score() const @nogc
 	{
 		Score score;
 
-		if (!stats.attributes[Attribute.hyperdrive])
-			score -= 1_000_000_000;
+		void fun(lazy string name, scope string delegate() value, Score scoreDelta)
+		{
+			score += scoreDelta;
+		}
 
-		if (movementEnergy > stats.attributes[Attribute.energyGeneration]) // TODO capacity
-			score -= 1_000_000_000;
-
-		auto accScore = this.acceleration * 5;
-		score += ilog2(accScore) * 1_000_000 + accScore;
-
-		auto turnScore = this.turnSpeed * 10;
-		score += ilog2(turnScore) * 1_000_000 + turnScore;
+		Config.calcScore!fun(this);
 
 		return score;
+	}
+
+	static void calcScore(alias cb)(in ref Config config) const
+	{
+		void sanityCheck(bool condition, string description)
+		{
+			if (condition)
+				cb(description, ()=>"ok", 0);
+			else
+				cb(description, ()=>"FAIL", -1_000_000_000);
+		}
+		sanityCheck(config.stats.attributes[Attribute.hyperdrive] > 0, "hyperdrive present");
+		sanityCheck(config.movementEnergy < config.stats.attributes[Attribute.energyGeneration], "movement energy"); // TODO capacity
+		sanityCheck(config.stats.attributes[Attribute.firingEnergy] < config.stats.attributes[Attribute.energyGeneration], "firing energy"); // TODO capacity
+
+		auto accScore = config.acceleration * 5;
+		cb("acceleration", ()=>config.acceleration.text, ilog2(accScore) * 1_000_000 + accScore);
+
+		auto turnScore = config.turnSpeed * 10;
+		cb("turning", ()=>config.turnSpeed.text, ilog2(turnScore) * 1_000_000 + turnScore);
+
+		auto shieldDamage = config.stats.attributes[Attribute.shieldDamage];
+		cb("shield damage", ()=>shieldDamage.text, shieldDamage * 2_000);
+
+		auto cost = config.stats.attributes[Attribute.cost];
+		cb("cost", ()=>cost.text, -cost / 10);
 	}
 }
 
@@ -197,12 +246,10 @@ void printConfig(in ref Config inConfig)
 	printTable(table);
 
 	writeln();
-	table = [[], ["attribute", "value"], []];
-	table ~= ["max speed", numberToString(config.maxSpeed)];
-	table ~= ["acceleration", numberToString(config.acceleration)];
-	table ~= ["turn speed", numberToString(config.turnSpeed)];
+	table = [[], ["attribute", "value", "score"], []];
+	Config.calcScore!((lazy string name, scope string delegate() value, Score scoreDelta) { table ~= [name, value(), scoreDelta.text]; })(config);
 	table ~= null;
-	table ~= ["score", numberToString(config.score)];
+	table ~= ["total", null, numberToString(config.score)];
 	table ~= null;
 	printTable(table);
 }
