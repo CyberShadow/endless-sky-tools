@@ -253,7 +253,7 @@ void printConfig(in ref Config inConfig)
 	printTable(table);
 
 	writeln();
-	table = [[], ["attribute", "value", "score"], []];
+	table = [[], ["stat", "value", "score"], []];
 	struct Printer { void opCall(lazy string name, scope string delegate() value, Score scoreDelta) { table ~= [name, value(), scoreDelta.text]; } }
 	Printer printer; config.calcScore(printer);
 	table ~= null;
