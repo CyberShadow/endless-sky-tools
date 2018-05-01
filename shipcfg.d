@@ -47,7 +47,8 @@ struct Config
 	{
 		assert(numItems < maxOutfits);
 		immutable Item* item = &shipData.items[itemIndex];
-		stats.attributes[] += item.attributes[];
+		foreach (a, value; item.attributes)
+			stats.attributes[a] += value;
 		items[numItems++] = itemIndex;
 	}
 
@@ -56,7 +57,8 @@ struct Config
 		assert(configIndex > 0 && configIndex < numItems);
 		auto itemIndex = items[configIndex];
 		immutable Item* item = &shipData.items[itemIndex];
-		stats.attributes[] -= item.attributes[];
+		foreach (a, value; item.attributes)
+			stats.attributes[a] -= value;
 		items[configIndex] = items[--numItems];
 	}
 
@@ -80,24 +82,22 @@ struct Config
 		return newConfig.isOK;
 	}
 
-	int maxSpeed() const @nogc
+	Value maxSpeed() const @nogc
 	{
 		return 60 * stats.attributes[Attribute.thrust] / stats.attributes[Attribute.drag];
 	}
 
-	int acceleration() const @nogc
+	Value acceleration() const @nogc
 	{
-		return 3600 * stats.attributes[Attribute.thrust] / stats.attributes[Attribute.mass]
-			/ (attributeMultiplier[Attribute.thrust] / attributeMultiplier[Attribute.mass]);
+		return 3600 * stats.attributes[Attribute.thrust] / stats.attributes[Attribute.mass];
 	}
 
-	int turnSpeed() const @nogc
+	Value turnSpeed() const @nogc
 	{
-		return 60 * stats.attributes[Attribute.turn] / stats.attributes[Attribute.mass]
-			/ (attributeMultiplier[Attribute.turn] / attributeMultiplier[Attribute.mass]);
+		return 60 * stats.attributes[Attribute.turn] / stats.attributes[Attribute.mass];
 	}
 
-	int movementEnergy() const @nogc
+	Value movementEnergy() const @nogc
 	{
 		return stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy];
 	}
@@ -108,26 +108,26 @@ struct Config
 	// 	return 2. + 2. / (1. + exp(x / -2.)) - 4. / (1. + exp(x / -4.));
 	// }
 
-	int idleHeat(double extraHeat = 0) const @nogc
+	int idleHeat(Value extraHeat = 0) const @nogc
 	{
-		auto heatGeneration = stats.attrFP!(Attribute.heatGeneration) + extraHeat;
-		auto heatDissipation = .001 * stats.attrFP!(Attribute.heatDissipation);
+		auto heatGeneration = stats.attributes[Attribute.heatGeneration] + extraHeat;
+		auto heatDissipation = .001 * stats.attributes[Attribute.heatDissipation].to!double;
 
 		// This ship's cooling ability:
 		/*double*/auto coolingEfficiency = /*coolingEfficiency()*/1;
-		auto cooling = stats.attrFP!(Attribute.cooling);
+		auto cooling = stats.attributes[Attribute.cooling];
 		//double activeCooling = coolingEfficiency * attributes.Get("active cooling");
 
 		// Idle heat is the heat level where:
 		// heat = heat * diss + heatGen - cool - activeCool * heat / (100 * mass)
 		// heat = heat * (diss - activeCool / (100 * mass)) + (heatGen - cool)
 		// heat * (1 - diss + activeCool / (100 * mass)) = (heatGen - cool)
-		double production = max(0, heatGeneration - cooling);
+		double production = max(0, (heatGeneration - cooling).to!double);
 		double dissipation = heatDissipation /*+ activeCooling / maximumHeat*/;
 		return cast(int)(production / dissipation);
 	}
 
-	int maximumHeat() const @nogc
+	Value maximumHeat() const @nogc
 	{
 		return stats.attributes[Attribute.mass] * 100;
 	}
@@ -165,26 +165,26 @@ struct Config
 		cb("maximum heat", ()=>maximumHeat.text, 0);
 		cb("idle heat", ()=>idleHeat.text, 0);
 
-		auto movementHeat = idleHeat(stats.attrFP!(Attribute.thrustingHeat) + stats.attrFP!(Attribute.turningHeat));
+		auto movementHeat = idleHeat(stats.attributes[Attribute.thrustingHeat] + stats.attributes[Attribute.turningHeat]);
 		cb("movement heat", ()=>movementHeat.text, 0);
 		sanityCheck(movementHeat < maximumHeat, "movement heat ok?");
 
-		auto battleHeat = idleHeat(stats.attrFP!(Attribute.firingHeat) + stats.attrFP!(Attribute.shieldHeat));
+		auto battleHeat = idleHeat(stats.attributes[Attribute.firingHeat] + stats.attributes[Attribute.shieldHeat]);
 		cb("battle heat", ()=>battleHeat.text, 0);
 		sanityCheck(battleHeat < maximumHeat, "battle heat ok?");
 
-		cb("acceleration", ()=>acceleration.text, cast(int)(log(acceleration) * 2_500_000));
+		cb("acceleration", ()=>acceleration.text, cast(int)(log(acceleration.to!double) * 2_500_000));
 
-		cb("turning", ()=>turnSpeed.text, cast(int)(log(turnSpeed) * 2_000_000));
+		cb("turning", ()=>turnSpeed.text, cast(int)(log(turnSpeed.to!double) * 2_000_000));
 
 		auto shieldDamage = stats.attributes[Attribute.shieldDamage];
-		cb("shield damage", ()=>shieldDamage.text, cast(int)(log(shieldDamage)) * 1_000_000);
+		cb("shield damage", ()=>shieldDamage.text, cast(int)(log(shieldDamage.to!double)) * 1_000_000);
 
 		auto shieldGeneration = stats.attributes[Attribute.shieldGeneration];
-		cb("shield generation", ()=>shieldGeneration.text, cast(int)(log(shieldGeneration) * 500_000));
+		cb("shield generation", ()=>shieldGeneration.text, cast(int)(log(shieldGeneration.to!double) * 500_000));
 
 		auto cost = stats.attributes[Attribute.cost];
-		cb("cost", ()=>cost.text, -cost / 2000);
+		cb("cost", ()=>cost.text, -cost.to!int / 2000);
 	}
 
 	void save(string fn)
@@ -227,9 +227,9 @@ void printConfig(in ref Config inConfig)
 	table ~= ["name"] ~ [EnumMembers!Attribute].filter!showAttribute.map!(a => attributeNames[a]).map!abbrevAttr.map!minWrap.array;
 	table ~= null;
 	foreach (item; config.items[0..config.numItems])
-		table ~= [shipData.items[item].name] ~ [EnumMembers!Attribute].filter!showAttribute.map!(a => shipData.items[item].attributes[a].I!(n => n ? formatAttribute(a, n) : "")).array;
+		table ~= [shipData.items[item].name] ~ [EnumMembers!Attribute].filter!showAttribute.map!(a => shipData.items[item].attributes[a].I!(n => n ? n.to!string : "")).array;
 	table ~= null;
-	table ~= ["Total"] ~ [EnumMembers!Attribute].filter!showAttribute.map!(a => formatAttribute(a, config.stats.attributes[a])).array;
+	table ~= ["Total"] ~ [EnumMembers!Attribute].filter!showAttribute.map!(a => config.stats.attributes[a].to!string).array;
 	table ~= null;
 	printTable(table);
 
@@ -253,13 +253,6 @@ string abbrevAttr(string s)
 		.replace(" inefficiency", " ineff.")
 		.replace(" dissipation", " diss.")
 	;
-}
-
-string formatAttribute(Attribute attr, int value)
-{
-	return isFractional(attr)
-		? numberToString(double(value) / fractionalMultiplier)
-		: value.to!string;
 }
 
 string minWrap(string s)

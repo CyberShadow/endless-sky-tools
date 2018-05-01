@@ -9,6 +9,7 @@ import ae.utils.meta;
 import ae.utils.text;
 
 import data;
+import decimal;
 import org;
 
 enum Attribute
@@ -54,42 +55,6 @@ enum Attribute
 
 }
 
-enum fractionalMultiplier = 100;
-
-bool isFractional(Attribute attr)
-{
-	switch (attr)
-	{
-		case Attribute.drag:
-		case Attribute.heatDissipation:
-		case Attribute.thrust:
-		case Attribute.thrustingEnergy:
-		case Attribute.thrustingHeat:
-		case Attribute.turn:
-		case Attribute.turningEnergy:
-		case Attribute.turningHeat:
-		case Attribute.energyGeneration:
-		case Attribute.heatGeneration:
-		case Attribute.cooling:
-		case Attribute.firingEnergy:
-		case Attribute.firingHeat:
-		case Attribute.shieldDamage:
-		case Attribute.shieldGeneration:
-		case Attribute.shieldEnergy:
-			return true;
-		default:
-			return false;
-	}
-}
-
-immutable int[enumLength!Attribute] attributeMultiplier = ()
-{
-	int[] arr;
-	foreach (e; RangeTuple!(enumLength!Attribute))
-		arr ~= isFractional(cast(Attribute)e) ? fractionalMultiplier : 1;
-	return arr;
-}();
-
 immutable string[enumLength!Attribute] attributeNames = ()
 {
 	string[] arr;
@@ -98,23 +63,12 @@ immutable string[enumLength!Attribute] attributeNames = ()
 	return arr;
 }();
 
-private int parseFrac(string s)
-{
-	auto parts = s.findSplit(".");
-	auto intPart = parts[0];
-	int sign = intPart.skipOver("-") ? -1 : 1;
-	if (!intPart.length)
-		intPart = "0";
-	auto fracPart = parts[2];
-	enforce(fracPart.length <= 2, "Too little precision: " ~ s);
-	while (fracPart.length < 2) fracPart ~= "0";
-	return (intPart.to!int * fractionalMultiplier + fracPart.to!int) * sign;
-}
+alias Value = Decimal!2;
 
 struct Item
 {
 	string name;
-	int[enumLength!Attribute] attributes;
+	Value[enumLength!Attribute] attributes;
 
 	void fromAttributes(Node node)
 	{
@@ -126,17 +80,9 @@ struct Item
 			{
 				auto value = (*pNode).value;
 				scope(failure) writefln("Error parsing attribute %(%s%) with value %(%s%)", [name], [value]);
-				if (isFractional(attr))
-					attributes[attr] = value.parseFrac;
-				else
-					attributes[attr] = value.to!int;
+				attributes[attr] = value;
 			}
 		}
-	}
-
-	double attrFP(Attribute attribute)() const
-	{
-		return attributes[attribute] * double(attributeMultiplier[attribute]);
 	}
 }
 
