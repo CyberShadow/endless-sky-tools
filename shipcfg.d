@@ -246,6 +246,8 @@ struct Config
 	unittest
 	{
 		assert(scale(0, 1_000_000) == 0);
+		assert(scale(1, 1_000_000) > 0);
+		assert(scale(1, 1_000_000) < 1);
 	}
 
 	void calcScore(T)(ref T cb) const
@@ -264,7 +266,7 @@ struct Config
 		sanityCheck("battle energy duration", energyDuration(battleEnergy), v => v > 60 * 10);
 		sanityCheck("pursue energy duration", energyDuration(pursueEnergy), v => v > 60 * 5);
 		cb("energy capacity", ()=>stats.attributes[Attribute.energyCapacity].text, scale(stats.attributes[Attribute.energyCapacity], 200_000));
-		sanityCheck("energy charge ratio", energyChargeRatio, v => v * 10 > 15);
+		sanityCheck("energy charge ratio", energyChargeRatio, v => v == Value.max || v * 10 > 15);
 
 		cb("maximum heat", ()=>maxHeat.text, 0);
 		cb("idle heat", ()=>idleHeat.text, 0);
@@ -277,6 +279,7 @@ struct Config
 
 		sanityCheck("acceleration", acceleration, v => v >= 400);
 		cb("acceleration", ()=>acceleration.text, scale(acceleration, 2_500_000));
+	//	cb("max speed", ()=>maxSpeed.text, scale(maxSpeed, 2_500_000));
 
 		sanityCheck("turning", turnSpeed, v => v >= 160);
 		cb("turning", ()=>turnSpeed.text, scale(turnSpeed, 2_000_000));
@@ -295,6 +298,8 @@ struct Config
 
 		auto cost = stats.attributes[Attribute.cost];
 		cb("cost", ()=>cost.text, -cost.to!int / 2000);
+
+		cb("part count", ()=>numItems.text, -numItems);
 	}
 
 	void sort()

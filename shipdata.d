@@ -98,6 +98,7 @@ struct ShipData
 
 ShipData getShipData(bool all = false)
 {
+	//all = true;
 	ShipData result;
 	foreach (name, node; gameData["ship"])
 	{
