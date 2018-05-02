@@ -13,72 +13,102 @@ import shipdata;
 
 void main()
 {
-	auto numOutfits = shipData.items.length - shipData.numShips;
-	auto maxIterations = numOutfits * numOutfits;
-
-	auto outfitsExpansions = iota(shipData.numShips, shipData.items.length).filter!(d => shipData.items[d].attributes[Attribute.outfitSpace] > 0).map!(.to!ItemIndex).array;
+	immutable numOutfits = shipData.items.length - shipData.numShips;
+	immutable outfitsExpansions = iota(shipData.numShips, shipData.items.length).filter!(d => shipData.items[d].attributes[Attribute.outfitSpace] > 0).map!(.to!ItemIndex).array;
 
 	Score bestScore = Score.min;
 	uint outerIterations = 0;
-	auto maxOuterIterations = maxIterations * 5;
+	immutable maxOuterIterations = numOutfits * numOutfits * 5;
 
-	foreach (thread; totalCPUs.iota.parallel(1))
+	void searchThread()
 	{
 		Xorshift rng;
 		rng.seed(unpredictableSeed);
 
-		while (true)
+		void genConfig(ref Config config)
 		{
-			Config config;
 			config.add(uniform(0, shipData.numShips, rng));
-			Score score = config.score;
+		}
 
-			uint iterations;
-			while (iterations < maxIterations)
-			{
-				auto newConfig = config;
-				foreach (n; 0..uniform(0, 3, rng))
-					if (newConfig.numItems > 1)
-						newConfig.remove(uniform(1, newConfig.numItems, rng));
+		void mutate(ref Config config)
+		{
+			foreach (n; 0..uniform(0, 3, rng))
+				if (config.numItems > 1)
+					config.remove(uniform(1, config.numItems, rng));
 
-				foreach (n; 0..uniform(0, 3, rng))
-					if (newConfig.numItems < maxOutfits)
-						newConfig.add(uniform(shipData.numShips, cast(ItemIndex)shipData.items.length, rng));
+			foreach (n; 0..uniform(0, 3, rng))
+				if (config.numItems < maxOutfits)
+					config.add(uniform(shipData.numShips, cast(ItemIndex)shipData.items.length, rng));
 
-				// Try to fix this configuration (optimization)
-				while (newConfig.numItems < maxOutfits && newConfig.stats.attributes[Attribute.outfitSpace] < 0 && outfitsExpansions.length)
-					newConfig.add(outfitsExpansions[$==1 ? 0 : uniform(0, $)]);
+			// Try to fix this configuration (optimization)
+			while (config.numItems < maxOutfits && config.stats.attributes[Attribute.outfitSpace] < 0 && outfitsExpansions.length)
+				config.add(outfitsExpansions[$==1 ? 0 : uniform(0, $)]);
+		}
 
-				if (newConfig.isOK)
-				{
-					auto newScore = newConfig.score;
-					if (score < newScore)
-					{
-						config = newConfig;
-						score = newScore;
-						iterations = 0;
-					}
-				}
-				iterations++;
-			}
+		void presentConfig(ref Config config)
+		{
+			writeln("\n\n############################################################################################################################################\n");
+			config.sort();
+			printConfig(config);
+			config.save("genship.json");
+			createSave(`/home/vladimir/Sync-PC/saves/endless-sky/saves/Test Drive.txt`, [config]);
+		}
 
+		bool checkResult(Score score, ref Config config)
+		{
 			synchronized
 			{
 				if (bestScore < score)
 				{
 					bestScore = score;
-					writeln("\n\n############################################################################################################################################\n");
-					config.sort();
-					printConfig(config);
-					config.save("genship.json");
-					createSave(`/home/vladimir/Sync-PC/saves/endless-sky/saves/Test Drive.txt`, [config]);
+					presentConfig(config);
 					outerIterations = 0;
 				}
 				else
-					if (outerIterations++ >= maxOuterIterations)
-						break;
+				if (outerIterations++ >= maxOuterIterations)
+					return true;
+				//else { write("."); stdout.flush(); }
+				return false;
 			}
-			//else { write("."); stdout.flush(); }
 		}
+
+		void hillClimb()
+		{
+			immutable maxIterations = numOutfits * numOutfits;
+
+			while (true)
+			{
+				Config config;
+				genConfig(config);
+				Score score = config.score;
+
+				uint iterations;
+				while (iterations < maxIterations)
+				{
+					auto newConfig = config;
+					mutate(newConfig);
+
+					if (newConfig.isOK)
+					{
+						auto newScore = newConfig.score;
+						if (score < newScore)
+						{
+							config = newConfig;
+							score = newScore;
+							iterations = 0;
+						}
+					}
+					iterations++;
+				}
+
+				if (checkResult(score, config))
+					break;
+			}
+		}
+
+		hillClimb();
 	}
+
+	foreach (thread; totalCPUs.iota.parallel(1))
+		searchThread();
 }
