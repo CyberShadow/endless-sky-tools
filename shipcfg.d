@@ -252,54 +252,55 @@ struct Config
 
 	void calcScore(T)(ref T cb) const
 	{
-		void sanityCheck(string description, Value value, scope bool delegate(Value) @nogc condition)
+		void val(string description, Value value, scope bool delegate(Value) @nogc isOK, scope Score delegate(Value) @nogc getScore)
 		{
-			auto ok = condition(value);
-			cb(description, ()=>"[%s] %s".format(ok ? "ok" : "FAIL", value), ok ? 0 : -1_000_000_000);
+			auto score = getScore ? getScore(value) : 0;
+			if (isOK)
+			{
+				auto ok = isOK(value);
+				cb(description, ()=>"[%s] %s".format(ok ? "ok" : "FAIL", value), score + (ok ? 0 : -1_000_000_000));
+			}
+			else
+				cb(description, ()=>value.toString(), score);
 		}
 
-		sanityCheck("hyperdrive", stats.attributes[Attribute.hyperdrive], v => v > 0);
-	//	sanityCheck("ramscoop", stats.attributes[Attribute.ramscoop], v => v > 0);
+		val("hyperdrive", stats.attributes[Attribute.hyperdrive], v => v > 0, null);
+	//	val("ramscoop", stats.attributes[Attribute.ramscoop], v => v > 0, null);
 
-		cb("shield energy / frame", ()=>shieldEnergyPerFrame.text, 0);
-		sanityCheck("movement energy duration", energyDuration(movementEnergy), v => v > 60 * 30);
-		sanityCheck("battle energy duration", energyDuration(battleEnergy), v => v > 60 * 10);
-		sanityCheck("pursue energy duration", energyDuration(pursueEnergy), v => v > 60 * 5);
-		cb("energy capacity", ()=>stats.attributes[Attribute.energyCapacity].text, scale(stats.attributes[Attribute.energyCapacity], 200_000));
-		sanityCheck("energy charge ratio", energyChargeRatio, v => v == Value.max || v * 10 > 15);
+		val("shield energy / frame", shieldEnergyPerFrame, null, null);
+		val("movement energy duration", energyDuration(movementEnergy), v => v > 60 * 30, null);
+		val("battle energy duration", energyDuration(battleEnergy), v => v > 60 * 10, null);
+		val("pursue energy duration", energyDuration(pursueEnergy), v => v > 60 * 5, null);
+		val("energy capacity", stats.attributes[Attribute.energyCapacity], null, v => scale(v, 200_000));
+		val("energy charge ratio", energyChargeRatio, v => v == Value.max || v * 10 > 15, null);
 
-		cb("maximum heat", ()=>maxHeat.text, 0);
-		cb("idle heat", ()=>idleHeat.text, 0);
+		val("maximum heat", maxHeat, null, null);
+		val("idle heat", idleHeat, null, null);
 
 		auto movementHeat = targetHeat(idleHeatGeneration + stats.attributes[Attribute.thrustingHeat] + stats.attributes[Attribute.turningHeat]);
-		sanityCheck("movement heat", movementHeat, v => v < maxHeat);
+		val("movement heat", movementHeat, v => v < maxHeat, null);
 
 		auto battleHeat = targetHeat(idleHeatGeneration + stats.attributes[Attribute.firingHeat]);
-		sanityCheck("battle heat", battleHeat, v => v < maxHeat);
+		val("battle heat", battleHeat, v => v < maxHeat, null);
 
-		sanityCheck("acceleration", acceleration, v => v >= 400);
-		cb("acceleration", ()=>acceleration.text, scale(acceleration, 2_500_000));
-	//	cb("max speed", ()=>maxSpeed.text, scale(maxSpeed, 2_500_000));
+		val("acceleration", acceleration, v => v >= 400, v => scale(v, 2_500_000));
+	//	val("max speed", maxSpeed, v => scale(v, 2_500_000));
 
-		sanityCheck("turning", turnSpeed, v => v >= 160);
-		cb("turning", ()=>turnSpeed.text, scale(turnSpeed, 2_000_000));
+		val("turning", turnSpeed, v => v >= 160, v => scale(v, 2_000_000));
 
 		auto shieldDamage = stats.attributes[Attribute.shieldDamage];
-		cb("shield damage", ()=>shieldDamage.text, scale(shieldDamage, 2_000_000));
+		val("shield damage", shieldDamage, null, v => scale(v, 2_000_000));
 
-		auto velocityMismatch = gunVelocityMismatch;
-		cb("velocity mismatch", ()=>velocityMismatch.text, -scale(gunVelocityMismatch * shieldDamage, 2_000_000));
+		val("velocity mismatch", gunVelocityMismatch, null, v => -scale(v * shieldDamage, 2_000_000));
 
 		auto shieldGeneration = stats.attributes[Attribute.shieldGeneration];
-		sanityCheck("shield generation", shieldGeneration, v => v > 0);
-		cb("shield generation", ()=>shieldGeneration.text, scale(shieldGeneration, 2_500_000));
+		val("shield generation", shieldGeneration, v => v > 0, v => scale(v, 2_500_000));
 
-		sanityCheck("extra outfits space", stats.attributes[Attribute.outfitSpace], v => v >= 1);
+		val("extra outfits space", stats.attributes[Attribute.outfitSpace], v => v >= 1, null);
 
-		auto cost = stats.attributes[Attribute.cost];
-		cb("cost", ()=>cost.text, -cost.to!int / 2000);
+		val("cost", stats.attributes[Attribute.cost], null, v => -v.to!int / 2000);
 
-		cb("part count", ()=>numItems.text, -numItems);
+		val("part count", Value(numItems), null, v => -v.to!int);
 	}
 
 	void sort()
