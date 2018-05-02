@@ -3,6 +3,7 @@ import std.algorithm.iteration;
 import std.algorithm.searching;
 import std.exception;
 import std.file;
+import std.path;
 import std.range.primitives;
 import std.stdio;
 import std.string;
@@ -50,6 +51,9 @@ enum gameDir = "/home/vladimir/work/extern/endless-sky";
 		Node[] stack;
 		foreach (de; dirEntries(gameDir ~ "/data", "*.txt", SpanMode.shallow))
 		{
+			if (de.baseName == "variants.txt")
+				continue;
+
 			scope(failure) writefln("Error reading file %s:", de.name);
 			foreach (i, line; de.readText.splitLines)
 			{
