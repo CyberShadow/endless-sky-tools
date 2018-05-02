@@ -132,11 +132,14 @@ ShipData getShipData(bool all = false)
 				item.weaponVelocity = Value(pVelocity.value);
 
 			// Estimate effective DPS accounting for accuracy and projectile travel time
-			Value projMultiplier = 1;
+			Value accMultiplier = 1;
 			if (auto pStr = "inaccuracy" in *pWeapon)
-				projMultiplier = projMultiplier * (100 - min(Value(100), Value(pStr.value) * 4)) / 100;
-			auto travelTime = 1 / max(Value(1), item.weaponVelocity * 2);
-			projMultiplier *= 1 - travelTime;
+				accMultiplier = (100 - min(Value(100), Value(pStr.value) * 4)) / 100;
+			auto travelTime = 1 / max(Value(1), item.weaponVelocity * 3 / 2);
+			auto speedMultiplier = 1 - travelTime;
+
+			auto projMultiplier = accMultiplier * speedMultiplier;
+			debug(weapon_multiplier) writefln("%s\t%s\t%s\t%s", accMultiplier, speedMultiplier, projMultiplier, name);
 
 			if (auto pReload = "reload" in *pWeapon)
 			{
