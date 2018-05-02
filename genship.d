@@ -1,6 +1,7 @@
 import std.algorithm.iteration;
 import std.algorithm.searching;
 import std.conv;
+import std.datetime.stopwatch : StopWatch;
 import std.exception;
 import std.parallelism;
 import std.random;
@@ -11,6 +12,8 @@ import savewriter;
 import shipcfg;
 import shipdata;
 
+//debug = metalog;
+
 void main()
 {
 	immutable numOutfits = shipData.items.length - shipData.numShips;
@@ -19,6 +22,8 @@ void main()
 	Score bestScore = Score.min;
 	uint outerIterations = 0;
 	immutable maxOuterIterations = numOutfits * numOutfits * 5;
+
+	debug(metalog) auto metaLog = File("metalog.txt", "ab");
 
 	void searchThread()
 	{
@@ -54,10 +59,23 @@ void main()
 			createSave(`/home/vladimir/Sync-PC/saves/endless-sky/saves/Test Drive.txt`, [config]);
 		}
 
+		debug(metalog) StopWatch sw;
+
 		bool checkResult(Score score, ref Config config)
 		{
 			synchronized
 			{
+				debug(metalog)
+				{
+					if (sw.running)
+					{
+						metaLog.writefln("%d\t%d", sw.peek.total!"hnsecs", score);
+						metaLog.flush();
+					}
+					else
+						sw.start();
+				}
+
 				if (bestScore < score)
 				{
 					bestScore = score;
@@ -68,6 +86,7 @@ void main()
 				if (outerIterations++ >= maxOuterIterations)
 					return true;
 				//else { write("."); stdout.flush(); }
+				debug(metalog) sw.reset();
 				return false;
 			}
 		}
