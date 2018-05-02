@@ -31,10 +31,13 @@ void createSave(string fn, Config[] configs)
 		f.writefln("\tname %s", "%s Test %d".format(ship.name, i+1).quote);
 		f.writefln("\tsystem %s", system.quote);
 		f.writefln("\tplanet %s", planet.quote);
-		f.writefln("\tcrew %s", shipNode["attributes"]["required crew"].value);
-		f.writefln("\tfuel %s", shipNode["attributes"]["fuel capacity"].value);
-		f.writefln("\tshields %s", shipNode["attributes"]["shields"].value);
-		f.writefln("\thull %s", shipNode["attributes"]["hull"].value);
+		if (auto pAttr = "attributes" in shipNode)
+		{
+			if (auto pStr = "required crew" in pAttr.children) f.writeln("\tcrew %s", pStr.value);
+			if (auto pStr = "fuel capacity" in pAttr.children) f.writeln("\tfuel %s", pStr.value);
+			if (auto pStr = "shields"       in pAttr.children) f.writeln("\tshields %s", pStr.value);
+			if (auto pStr = "hull"          in pAttr.children) f.writeln("\thull %s", pStr.value);
+		}
 		f.writeln();
 
 		auto outfits = config.items[1..config.numItems].map!(itemIndex => shipData.items[itemIndex]);
