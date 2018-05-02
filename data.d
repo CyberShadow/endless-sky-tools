@@ -9,7 +9,7 @@ import std.string;
 
 import ae.utils.aa;
 
-class Node
+final class Node
 {
 	OrderedMap!(string, Node) children;
 	alias children this;
