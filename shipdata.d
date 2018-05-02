@@ -70,8 +70,8 @@ alias Value = Decimal!2;
 
 struct Item
 {
-	string name;
 	Value[enumLength!Attribute] attributes;
+	string name, category;
 	Value weaponVelocity;
 
 	void fromAttributes(in Node node)
@@ -103,7 +103,8 @@ ShipData getShipData(bool all = false)
 	foreach (name, node; gameData["ship"])
 	{
 		if (!all && name !in knownItems) continue;
-		auto item = Item(name);
+		Item item;
+		item.name = name;
 		item.fromAttributes(node["attributes"]);
 		if (auto pNode = "gun" in node)
 			item.attributes[Attribute.gunPorts] = (){ int count; pNode.iterLeaves((_){count++;}); return count; }();
@@ -117,13 +118,18 @@ ShipData getShipData(bool all = false)
 	{
 		scope(failure) writefln("Error parsing outfit %(%s%):", [name]);
 		if (!all && name !in knownItems) continue;
-		if ("category" in node && node["category"].value.isOneOf("Hand to Hand", "Ammunition", "Special"))
-			continue;
+		Item item;
+		item.name = name;
+		item.fromAttributes(node);
+		if (auto pStr = "category" in node)
+		{
+			if (pStr.value.isOneOf("Hand to Hand", "Ammunition", "Special"))
+				continue;
+			item.category = pStr.value;
+		}
 		if (auto pStr = "installable" in node)
 			if (Value(pStr.value) < 0)
 				continue;
-		auto item = Item(name);
-		item.fromAttributes(node);
 		if (auto pWeapon = "weapon" in node)
 		{
 			if ("ammo" in *pWeapon)

@@ -312,7 +312,10 @@ struct Config
 
 	void sort()
 	{
-		items[1..numItems].sort();
+		items[1..numItems].multiSort!(
+			(a, b) => shipData.items[a].category < shipData.items[b].category,
+			(a, b) => a < b,
+		);
 	}
 
 	void save(string fn)
