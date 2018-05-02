@@ -41,7 +41,7 @@ void createSave(string fn, Config[] configs)
 		auto guns = outfits.filter!(item => item.attributes[Attribute.gunPorts] < 0).array;
 		auto turrets = outfits.filter!(item => item.attributes[Attribute.turretMounts] < 0).array;
 
-		void dump(string name, Node node, int depth)
+		void dump(string name, in Node node, int depth)
 		{
 			if (node.isValue)
 				f.writefln("%s%s %s", '\t'.repeat(depth), name.quote, node.value.quote);

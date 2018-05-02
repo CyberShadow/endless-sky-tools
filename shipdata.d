@@ -74,7 +74,7 @@ struct Item
 	Value[enumLength!Attribute] attributes;
 	Value weaponVelocity;
 
-	void fromAttributes(Node node)
+	void fromAttributes(in Node node)
 	{
 		foreach (Attribute attr; Attribute.init .. enumLength!Attribute)
 		{
