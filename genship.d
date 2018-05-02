@@ -68,6 +68,7 @@ void main()
 				{
 					bestScore = score;
 					writeln("\n\n############################################################################################################################################\n");
+					config.sort();
 					printConfig(config);
 					config.save("genship.json");
 					createSave(`/home/vladimir/Sync-PC/saves/endless-sky/saves/Test Drive.txt`, [config]);

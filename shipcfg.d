@@ -297,6 +297,11 @@ struct Config
 		cb("cost", ()=>cost.text, -cost.to!int / 2000);
 	}
 
+	void sort()
+	{
+		items[1..numItems].sort();
+	}
+
 	void save(string fn)
 	{
 		auto data = items[0..numItems].map!(item => shipData.items[item].name).array;
@@ -326,11 +331,8 @@ bool showAttribute(Attribute attr)
 }
 
 
-void printConfig(in ref Config inConfig)
+void printConfig(in ref Config config)
 {
-	Config config = inConfig;
-	config.items[1..config.numItems].sort();
-
 	writefln("%d/%d outfits:", config.numItems, maxOutfits);
 	string[][] table;
 	table ~= null;
