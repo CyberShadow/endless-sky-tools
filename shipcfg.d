@@ -257,6 +257,7 @@ struct Config
 		}
 
 		sanityCheck("hyperdrive", stats.attributes[Attribute.hyperdrive], v => v > 0);
+	//	sanityCheck("ramscoop", stats.attributes[Attribute.ramscoop], v => v > 0);
 
 		cb("shield energy / frame", ()=>shieldEnergyPerFrame.text, 0);
 		sanityCheck("movement energy duration", energyDuration(movementEnergy), v => v > 60 * 30);

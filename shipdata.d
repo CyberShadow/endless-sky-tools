@@ -39,6 +39,7 @@ enum Attribute
 	gunPorts,
 	turretMounts,
 	hyperdrive,
+//	ramscoop,
 	firingEnergy,
 	firingHeat,
 	shieldDamage,
