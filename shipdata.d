@@ -1,3 +1,4 @@
+import std.algorithm.comparison;
 import std.algorithm.searching;
 import std.array;
 import std.conv;
@@ -69,6 +70,7 @@ struct Item
 {
 	string name;
 	Value[enumLength!Attribute] attributes;
+	Value weaponVelocity;
 
 	void fromAttributes(Node node)
 	{
@@ -119,13 +121,20 @@ ShipData getShipData()
 		{
 			if ("ammo" in *pWeapon)
 				continue; // TODO: tons / cost of ammo per unit of time / damage?
-			// if (auto pVelocity = "velocity" in *pWeapon)
-			// 	if (pVelocity.value.to!float < 100)
-			// 		continue; // TODO
+			if (auto pVelocity = "velocity" in *pWeapon)
+				item.weaponVelocity = Value(pVelocity.value);
+
+			// Estimate effective DPS accounting for accuracy and projectile travel time
+			Value projMultiplier = 1;
+			if (auto pStr = "inaccuracy" in *pWeapon)
+				projMultiplier = projMultiplier * (100 - Value(pStr.value) * 4) / 100;
+			auto travelTime = 1 / max(Value(1), item.weaponVelocity);
+			projMultiplier *= 1 - travelTime;
+
 			if (auto pReload = "reload" in *pWeapon)
 			{
 				if (auto pSD = "shield damage" in *pWeapon)
-					item.attributes[Attribute.shieldDamage] = Value(pSD.value) / Value(pReload.value);
+					item.attributes[Attribute.shieldDamage] = Value(pSD.value) / Value(pReload.value) * projMultiplier;
 				if (auto pFE = "firing energy" in *pWeapon)
 					item.attributes[Attribute.firingEnergy] = Value(pFE.value) / Value(pReload.value);
 				if (auto pFE = "firing heat" in *pWeapon)

@@ -103,7 +103,7 @@ struct Decimal(uint digits, Base = long)
 		return !!rawValue;
 	}
 
-	bool opCast(T)() const
+	T opCast(T)() const
 	if (is(T == Decimal))
 	{
 		return this;
@@ -135,7 +135,7 @@ struct Decimal(uint digits, Base = long)
 	}
 
 	Decimal opBinary(string op)(Base b) const @nogc
-	if (op == q{*})
+	if (op == q{*} || op == q{/})
 	{
 		return makeRaw(mixin(q{rawValue} ~ op ~ q{b}));
 	}
@@ -146,10 +146,36 @@ struct Decimal(uint digits, Base = long)
 		return makeRaw(mixin(q{b} ~ op ~ q{rawValue}));
 	}
 
+	Decimal opBinaryRight(string op)(Base b) const @nogc
+	if (op == q{/})
+	{
+		return makeRaw(mixin(q{(b * factor * factor)} ~ op ~ q{rawValue}));
+	}
+
+	Decimal opBinaryRight(string op)(Base b) const @nogc
+	if (op == q{+} || op == q{-})
+	{
+		return makeRaw(mixin(q{(b * factor)} ~ op ~ q{rawValue}));
+	}
+
 	Decimal opOpAssign(string op)(Decimal b) @nogc
 	if (op == q{+} || op == q{-})
 	{
 		mixin(q{rawValue} ~ op ~ q{=b.rawValue;});
+		return this;
+	}
+
+	Decimal opOpAssign(string op)(Decimal b) @nogc
+	if (op == q{*})
+	{
+		this = mixin(q{this} ~ op ~ q{b});
+		return this;
+	}
+
+	Decimal opOpAssign(string op)(Base b) @nogc
+	if (op == q{*} || op == q{/})
+	{
+		mixin(q{rawValue} ~ op ~ q{=b;});
 		return this;
 	}
 
@@ -190,4 +216,12 @@ unittest
 	assert(d / d == 1);
 	d -= Decimal!2(1);
 	assert(d == 2);
+	assert(1 / Decimal!2("0.1") == 10);
+	assert(3 - Decimal!2(2) == 1);
+	d = 5;
+	d *= 4;
+	assert(d == 20);
+	assert(d / 2 == 10);
+	d /= 5;
+	assert(d == 4);
 }

@@ -194,6 +194,33 @@ struct Config
 		return stats.attributes[Attribute.mass] * 100;
 	}
 
+	/// A too large mismatch in the velocity of guns can cause trouble
+	/// tracking (allowing all guns to stay focus on the target).
+	Value gunVelocityMismatch() const @nogc
+	{
+		Value minVelocity = Value.max, maxVelocity = 0;
+		foreach (itemIndex; items[1..numItems])
+		{
+			auto item = &shipData.items[itemIndex];
+			if (item.attributes[Attribute.gunPorts] < 0)
+				if (auto velocity = item.weaponVelocity)
+				{
+					minVelocity = min(minVelocity, velocity);
+					maxVelocity = max(maxVelocity, velocity);
+				}
+		}
+
+		Value velocityMismatch;
+		if (maxVelocity && minVelocity != maxVelocity)
+		{
+			auto minTime = 1000 / maxVelocity;
+			auto maxTime = 1000 / minVelocity;
+			return 1 - (minTime / maxTime);
+		}
+		else
+			return Value(0);
+	}
+
 	Score score() const @nogc
 	{
 		static struct Collector
@@ -212,9 +239,14 @@ struct Config
 	enum defaultCurve = 0.8;
 	static int scale(double val, int multiplier, double curve = defaultCurve) @nogc
 	{
-		return cast(int)(log(E + val) * multiplier);
+		return cast(int)((log(E + val) - 1) * multiplier);
 	}
 	static int scale(Value val, int multiplier, double curve = defaultCurve) @nogc { return scale(val.to!double, multiplier, curve); }
+
+	unittest
+	{
+		assert(scale(0, 1_000_000) == 0);
+	}
 
 	void calcScore(T)(ref T cb) const
 	{
@@ -251,7 +283,11 @@ struct Config
 		auto shieldDamage = stats.attributes[Attribute.shieldDamage];
 		cb("shield damage", ()=>shieldDamage.text, scale(shieldDamage, 2_000_000));
 
+		auto velocityMismatch = gunVelocityMismatch;
+		cb("velocity mismatch", ()=>velocityMismatch.text, -scale(gunVelocityMismatch * shieldDamage, 2_000_000));
+
 		auto shieldGeneration = stats.attributes[Attribute.shieldGeneration];
+		sanityCheck("shield generation", shieldGeneration, v => v > 0);
 		cb("shield generation", ()=>shieldGeneration.text, scale(shieldGeneration, 2_500_000));
 
 		sanityCheck("extra outfits space", stats.attributes[Attribute.outfitSpace], v => v >= 1);
