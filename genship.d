@@ -18,7 +18,7 @@ void main()
 
 	auto outfitsExpansions = iota(shipData.numShips, shipData.items.length).filter!(d => shipData.items[d].attributes[Attribute.outfitSpace] > 0).map!(.to!ItemIndex).array;
 
-	Score bestScore;
+	Score bestScore = Score.min;
 	uint outerIterations = 0;
 	auto maxOuterIterations = maxIterations * 5;
 
