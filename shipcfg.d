@@ -264,43 +264,50 @@ struct Config
 				cb(description, ()=>value.toString(), score);
 		}
 
-		val("hyperdrive", stats.attributes[Attribute.hyperdrive], v => v > 0, null);
-	//	val("ramscoop", stats.attributes[Attribute.ramscoop], v => v > 0, null);
+		val("hyperdrive"              , stats.attributes[Attribute.hyperdrive    ], v => v > 0                        , null                                    );
+	//	val("ramscoop"                , stats.attributes[Attribute.ramscoop      ], v => v > 0                        , null                                    );
 
-		val("shield energy / frame", shieldEnergyPerFrame, null, null);
-		val("movement energy duration", energyDuration(movementEnergy), v => v > 60 * 30, null);
-		val("battle energy duration", energyDuration(battleEnergy), v => v > 60 * 10, null);
-		val("pursue energy duration", energyDuration(pursueEnergy), v => v > 60 * 5, null);
-		val("energy capacity", stats.attributes[Attribute.energyCapacity], null, v => scale(v, 200_000));
-		val("energy charge ratio", energyChargeRatio, v => v == Value.max || v * 10 > 15, null);
+		val("shield energy / frame"   , shieldEnergyPerFrame                      , null                              , null                                    );
+		val("movement energy duration", energyDuration(movementEnergy)            , v => v > 60 * 30                  , null                                    );
+		val("battle energy duration"  , energyDuration(battleEnergy  )            , v => v > 60 * 10                  , null                                    );
+		val("pursue energy duration"  , energyDuration(pursueEnergy  )            , v => v > 60 *  5                  , null                                    );
+		val("energy capacity"         , stats.attributes[Attribute.energyCapacity], null                              , v => scale(v, 200_000)                  );
+		val("energy charge ratio"     , energyChargeRatio                         , v => v == Value.max || v * 10 > 15, null                                    );
 
-		val("maximum heat", maxHeat, null, null);
-		val("idle heat", idleHeat, null, null);
+		val("maximum heat"            , maxHeat                                   , null                              , null                                    );
+		val("idle heat"               , idleHeat                                  , null                              , null                                    );
 
-		auto movementHeat = targetHeat(idleHeatGeneration + stats.attributes[Attribute.thrustingHeat] + stats.attributes[Attribute.turningHeat]);
-		val("movement heat", movementHeat, v => v < maxHeat, null);
+		auto movementHeat =
+			targetHeat(idleHeatGeneration
+					   + stats.attributes[Attribute.thrustingHeat]
+					   + stats.attributes[Attribute.turningHeat  ]
+					   );
+		val("movement heat"           , movementHeat                              , v => v < maxHeat                  , null                                    );
 
-		auto battleHeat = targetHeat(idleHeatGeneration + stats.attributes[Attribute.firingHeat]);
-		val("battle heat", battleHeat, v => v < maxHeat, null);
+		auto battleHeat =
+			targetHeat(idleHeatGeneration
+					   + stats.attributes[Attribute.firingHeat]
+					   );
+		val("battle heat"             , battleHeat                                , v => v < maxHeat                  , null                                    );
 
-		val("acceleration", acceleration, v => v >= 400, v => scale(v, 2_500_000));
-	//	val("max speed", maxSpeed, v => scale(v, 2_500_000));
+		val("acceleration"            , acceleration                              , v => v >= 400                     , v => scale(v, 2_500_000)                );
+	//	val("max speed"               , maxSpeed                                  , null                              , v => scale(v, 2_500_000)                );
 
-		val("turning", turnSpeed, v => v >= 160, v => scale(v, 2_000_000));
+		val("turning"                 , turnSpeed                                 , v => v >= 160                     , v => scale(v, 2_000_000)                );
 
 		auto shieldDamage = stats.attributes[Attribute.shieldDamage];
-		val("shield damage", shieldDamage, null, v => scale(v, 2_000_000));
+		val("shield damage"           , shieldDamage                              , null                              , v => scale(v, 2_000_000)                );
 
-		val("velocity mismatch", gunVelocityMismatch, null, v => -scale(v * shieldDamage, 2_000_000));
+		val("velocity mismatch"       , gunVelocityMismatch                       , null                              , v => -scale(v * shieldDamage, 2_000_000));
 
 		auto shieldGeneration = stats.attributes[Attribute.shieldGeneration];
-		val("shield generation", shieldGeneration, v => v > 0, v => scale(v, 2_500_000));
+		val("shield generation"       , shieldGeneration                          , v => v > 0                        , v => scale(v, 2_500_000)                );
 
-		val("extra outfits space", stats.attributes[Attribute.outfitSpace], v => v >= 1, null);
+		val("extra outfits space"     , stats.attributes[Attribute.outfitSpace   ], v => v >= 1                       , null                                    );
 
-		val("cost", stats.attributes[Attribute.cost], null, v => -v.to!int / 2000);
+		val("cost"                    , stats.attributes[Attribute.cost          ], null                              , v => -v.to!int / 2000                   );
 
-		val("part count", Value(numItems), null, v => -v.to!int);
+		val("part count"              , Value(numItems)                           , null                              , v => -v.to!int                          );
 	}
 
 	void sort()
