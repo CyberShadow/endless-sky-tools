@@ -21,7 +21,7 @@ void main()
 
 	Score bestScore;
 	uint outerIterations = 0;
-	auto maxOuterIterations = maxIterations;
+	auto maxOuterIterations = maxIterations * 5;
 
 	foreach (thread; totalCPUs.iota.parallel(1))
 	{
