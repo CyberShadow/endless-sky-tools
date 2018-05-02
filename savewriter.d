@@ -1,4 +1,4 @@
-import std.algorithm.iteration : map;
+import std.algorithm.iteration;
 import std.exception;
 import std.format;
 import std.range;
@@ -37,6 +37,10 @@ void createSave(string fn, Config[] configs)
 		f.writefln("\thull %s", shipNode["attributes"]["hull"].value);
 		f.writeln();
 
+		auto outfits = config.items[1..config.numItems].map!(itemIndex => shipData.items[itemIndex]);
+		auto guns = outfits.filter!(item => item.attributes[Attribute.gunPorts] < 0).array;
+		auto turrets = outfits.filter!(item => item.attributes[Attribute.turretMounts] < 0).array;
+
 		void dump(string name, Node node, int depth)
 		{
 			if (node.isValue)
@@ -44,15 +48,16 @@ void createSave(string fn, Config[] configs)
 			else
 			if (name == "gun" || name == "engine" || name == "turret")
 			{
-				void printLines(Node node, string[] stack)
-				{
-					if (node.isValue)
-						f.writefln("%s%s%-( %s%)", '\t'.repeat(depth), name.quote, (stack ~ node.value).map!quote);
-					else
-						foreach (childName, childNode; node.children)
-							printLines(childNode, stack ~ childName);
-				}
-				printLines(node, null);
+				node.iterLeaves(
+					(string[] path)
+					{
+						if (name == "gun")
+							path = path[0..2] ~ (guns.length ? [guns.shift.name] : []);
+						else
+						if (name == "turret")
+							path = path[0..2] ~ (turrets.length ? [turrets.shift.name] : []);
+						f.writefln("%s%s%-( %s%)", '\t'.repeat(depth), name.quote, path.map!quote);
+					});
 			}
 			else
 			{
@@ -66,8 +71,8 @@ void createSave(string fn, Config[] configs)
 			if (name != "outfits")
 				dump(name, value, 1);
 		f.writefln("\toutfits");
-		foreach (itemIndex; config.items[1..config.numItems])
-			f.writefln("\t\t%s", shipData.items[itemIndex].name.quote);
+		foreach (item; outfits)
+			f.writefln("\t\t%s", item.name.quote);
 	}
 }
 
