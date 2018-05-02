@@ -28,6 +28,15 @@ class Node
 
 	Node opIndex(string s) { return children[s]; }
 	override string toString() { return format("%-(%s%)", children.byKeyValue.map!(kv => format("%(%s%)", [kv.key]) ~ "\n" ~ kv.value.toString().indent())); }
+
+	void iterLeaves(void delegate(string[]) callback, string[] stack = null)
+	{
+		if (!children)
+			callback(stack);
+		else
+			foreach (name, value; children)
+				value.iterLeaves(callback, stack ~ name);
+	}
 }
 
 enum gameDir = "/home/vladimir/work/extern/endless-sky";

@@ -6,6 +6,7 @@ import std.exception;
 import std.stdio;
 import std.string;
 
+import ae.utils.array;
 import ae.utils.meta;
 import ae.utils.text;
 
@@ -95,18 +96,18 @@ struct ShipData
 	uint numShips;
 }
 
-ShipData getShipData()
+ShipData getShipData(bool all = false)
 {
 	ShipData result;
 	foreach (name, node; gameData["ship"])
 	{
-		if (name !in knownItems) continue;
+		if (!all && name !in knownItems) continue;
 		auto item = Item(name);
 		item.fromAttributes(node["attributes"]);
 		if (auto pNode = "gun" in node)
-			item.attributes[Attribute.gunPorts] = pNode.children.length.to!int;
+			item.attributes[Attribute.gunPorts] = (){ int count; pNode.iterLeaves((_){count++;}); return count; }();
 		if (auto pNode = "turret" in node)
-			item.attributes[Attribute.turretMounts] = pNode.children.length.to!int;
+			item.attributes[Attribute.turretMounts] = (){ int count; pNode.iterLeaves((_){count++;}); return count; }();
 		result.items ~= item;
 	}
 	result.numShips = result.items.length.to!uint;
@@ -114,8 +115,9 @@ ShipData getShipData()
 	foreach (name, node; gameData["outfit"])
 	{
 		scope(failure) writefln("Error parsing outfit %(%s%):", [name]);
-		if (name !in knownItems) continue;
-		if (node["category"].value == "Hand to Hand") continue;
+		if (!all && name !in knownItems) continue;
+		if ("category" in node && node["category"].value.isOneOf("Hand to Hand", "Ammunition"))
+			continue;
 		auto item = Item(name);
 		item.fromAttributes(node);
 		if (auto pWeapon = "weapon" in node)
@@ -145,4 +147,9 @@ ShipData getShipData()
 		result.items ~= item;
 	}
 	return result;
+}
+
+unittest
+{
+	assert(getShipData(true).items.find!(i => i.name == "Arach Hulk").front.attributes[Attribute.turretMounts] == 4);
 }
