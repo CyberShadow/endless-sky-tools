@@ -17,7 +17,6 @@ void main()
 	auto maxIterations = numOutfits * numOutfits;
 
 	auto outfitsExpansions = iota(shipData.numShips, shipData.items.length).filter!(d => shipData.items[d].attributes[Attribute.outfitSpace] > 0).map!(.to!ItemIndex).array;
-	enforce(outfitsExpansions.length == 1);
 
 	Score bestScore;
 	uint outerIterations = 0;
@@ -47,8 +46,8 @@ void main()
 						newConfig.add(uniform(shipData.numShips, cast(ItemIndex)shipData.items.length, rng));
 
 				// Try to fix this configuration (optimization)
-				while (newConfig.numItems < maxOutfits && newConfig.stats.attributes[Attribute.outfitSpace] < 0)
-					newConfig.add(outfitsExpansions[0]);
+				while (newConfig.numItems < maxOutfits && newConfig.stats.attributes[Attribute.outfitSpace] < 0 && outfitsExpansions.length)
+					newConfig.add(outfitsExpansions[$==1 ? 0 : uniform(0, $)]);
 
 				if (newConfig.isOK)
 				{
