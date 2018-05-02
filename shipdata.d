@@ -128,7 +128,7 @@ ShipData getShipData()
 			Value projMultiplier = 1;
 			if (auto pStr = "inaccuracy" in *pWeapon)
 				projMultiplier = projMultiplier * (100 - Value(pStr.value) * 4) / 100;
-			auto travelTime = 1 / max(Value(1), item.weaponVelocity);
+			auto travelTime = 1 / max(Value(1), item.weaponVelocity * 2);
 			projMultiplier *= 1 - travelTime;
 
 			if (auto pReload = "reload" in *pWeapon)
