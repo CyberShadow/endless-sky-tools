@@ -116,8 +116,11 @@ ShipData getShipData(bool all = false)
 	{
 		scope(failure) writefln("Error parsing outfit %(%s%):", [name]);
 		if (!all && name !in knownItems) continue;
-		if ("category" in node && node["category"].value.isOneOf("Hand to Hand", "Ammunition"))
+		if ("category" in node && node["category"].value.isOneOf("Hand to Hand", "Ammunition", "Special"))
 			continue;
+		if (auto pStr = "installable" in node)
+			if (Value(pStr.value) < 0)
+				continue;
 		auto item = Item(name);
 		item.fromAttributes(node);
 		if (auto pWeapon = "weapon" in node)
@@ -130,7 +133,7 @@ ShipData getShipData(bool all = false)
 			// Estimate effective DPS accounting for accuracy and projectile travel time
 			Value projMultiplier = 1;
 			if (auto pStr = "inaccuracy" in *pWeapon)
-				projMultiplier = projMultiplier * (100 - Value(pStr.value) * 4) / 100;
+				projMultiplier = projMultiplier * (100 - min(Value(100), Value(pStr.value) * 4)) / 100;
 			auto travelTime = 1 / max(Value(1), item.weaponVelocity * 2);
 			projMultiplier *= 1 - travelTime;
 
