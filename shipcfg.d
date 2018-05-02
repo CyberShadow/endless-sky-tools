@@ -272,7 +272,7 @@ struct Config
 		auto movementHeat = targetHeat(idleHeatGeneration + stats.attributes[Attribute.thrustingHeat] + stats.attributes[Attribute.turningHeat]);
 		sanityCheck("movement heat", movementHeat, v => v < maxHeat);
 
-		auto battleHeat = targetHeat(idleHeatGeneration + stats.attributes[Attribute.firingHeat] + stats.attributes[Attribute.shieldHeat]);
+		auto battleHeat = targetHeat(idleHeatGeneration + stats.attributes[Attribute.firingHeat]);
 		sanityCheck("battle heat", battleHeat, v => v < maxHeat);
 
 		sanityCheck("acceleration", acceleration, v => v >= 400);
