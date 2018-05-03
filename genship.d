@@ -37,11 +37,11 @@ void main()
 
 		void mutate(ref Config config)
 		{
-			foreach (n; 0..uniform(0, 3, rng))
+			foreach (n; 0..uniform(1, 3, rng))
 				if (config.numItems > 1)
 					config.remove(uniform(1, config.numItems, rng));
 
-			foreach (n; 0..uniform(0, 3, rng))
+			foreach (n; 0..uniform(1, 3, rng))
 				if (config.numItems < maxOutfits)
 					config.add(uniform(shipData.numShips, cast(ItemIndex)shipData.items.length, rng));
 
