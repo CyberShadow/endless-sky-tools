@@ -1,6 +1,7 @@
 import std.algorithm.iteration;
 import std.exception;
 import std.format;
+import std.path;
 import std.range;
 import std.stdio;
 
@@ -16,7 +17,7 @@ void createSave(string fn, Config[] configs)
 	enum planet = "New Boston";
 
 	auto f = File(fn, "wb");
-	f.writefln(`pilot Test Drive`);
+	f.writefln(`pilot ` ~ fn.baseName.stripExtension);
 	f.writefln(`date 17 11 3013`);
 	f.writefln(`system %s`, system.quote);
 	f.writefln(`planet %s`, planet.quote);
