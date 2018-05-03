@@ -46,6 +46,9 @@ void main()
 					config.add(uniform(shipData.numShips, cast(ItemIndex)shipData.items.length, rng));
 
 			// Try to fix this configuration (optimization)
+			// WATCH ME: Meta-analysis shows this is somewhat harmful
+			// for some target configurations (when the optimal
+			// configuration does not use outfit expansions)
 			while (config.numItems < maxOutfits && config.stats.attributes[Attribute.outfitSpace] < 0 && outfitsExpansions.length)
 				config.add(outfitsExpansions[$==1 ? 0 : uniform(0, $)]);
 		}
