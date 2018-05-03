@@ -23,7 +23,7 @@ void main()
 	uint outerIterations = 0;
 	immutable maxOuterIterations = numOutfits * numOutfits * 5;
 
-	debug(metalog) auto metaLog = File("metalog.txt", "ab");
+	debug(metalog) auto metaLog = File("metalog.txt", "wb");
 
 	void searchThread()
 	{
