@@ -16,7 +16,7 @@ import shipdata;
 
 void main()
 {
-	immutable numOutfits = shipData.items.length - shipData.numShips;
+	immutable numOutfits = cast(ItemIndex)(shipData.items.length - shipData.numShips);
 	immutable outfitsExpansions = iota(shipData.numShips, shipData.items.length).filter!(d => shipData.items[d].attributes[Attribute.outfitSpace] > 0).map!(.to!ItemIndex).array;
 
 	Score bestScore = Score.min;
@@ -125,7 +125,56 @@ void main()
 			}
 		}
 
-		hillClimb();
+		void simulatedAnnealing()
+		{
+			immutable simAllIterations = numOutfits * numOutfits * 2;
+			immutable finalIterations  = numOutfits * numOutfits * 2;
+			immutable maxIterations    = simAllIterations + finalIterations;
+
+			while (true)
+			{
+				Config config;
+				genConfig(config);
+				Score score = config.score;
+
+				uint iterations;
+				while (iterations < maxIterations)
+				{
+					auto newConfig = config;
+					mutate(newConfig);
+
+					if (newConfig.isOK)
+					{
+						auto newScore = newConfig.score;
+						bool accept;
+						if (score < newScore)
+							accept = true;
+						else // newScore < score
+							if (iterations < simAllIterations && newScore > 0)
+							{
+								// accept if (iterations/simAllIterations) < (newScore / score)
+								accept = Value(iterations) / simAllIterations < Value(newScore) / score;
+							}
+							else
+								accept = false;
+
+						if (accept)
+						{
+							config = newConfig;
+							score = newScore;
+							if (iterations > simAllIterations)
+								iterations = simAllIterations; // reset final stage
+						}
+					}
+					iterations++;
+				}
+
+				if (checkResult(score, config))
+					break;
+			}
+		}
+
+		simulatedAnnealing();
 	}
 
 	foreach (thread; totalCPUs.iota.parallel(1))
