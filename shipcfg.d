@@ -112,14 +112,7 @@ struct Config
 		return 60 * stats.attributes[Attribute.turn] / stats.attributes[Attribute.mass];
 	}
 
-	Value shieldEnergyPerFrame() const @nogc
-	{
-		auto shieldEnergy = stats.attributes[Attribute.shieldEnergy]; // per unit of shields!
-		auto shieldGeneration = stats.attributes[Attribute.shieldGeneration]; // per frame
-		return shieldEnergy * shieldGeneration;
-	}
-
-	Value idleEnergy() const @nogc { return shieldEnergyPerFrame; }
+	Value idleEnergy() const @nogc { return stats.attributes[Attribute.shieldEnergy]; }
 	Value movementEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy]; }
 	Value battleEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.firingEnergy]; }
 	Value pursueEnergy() const @nogc { return battleEnergy + stats.attributes[Attribute.thrustingEnergy]; }
@@ -267,7 +260,6 @@ struct Config
 		val("hyperdrive"              , stats.attributes[Attribute.hyperdrive    ], v => v > 0                        , null                                    );
 	//	val("ramscoop"                , stats.attributes[Attribute.ramscoop      ], v => v > 0                        , null                                    );
 
-		val("shield energy / frame"   , shieldEnergyPerFrame                      , null                              , null                                    );
 		val("movement energy duration", energyDuration(movementEnergy)            , v => v > 60 * 30                  , null                                    );
 		val("battle energy duration"  , energyDuration(battleEnergy  )            , v => v > 60 * 10                  , null                                    );
 		val("pursue energy duration"  , energyDuration(pursueEnergy  )            , v => v > 60 *  5                  , null                                    );
