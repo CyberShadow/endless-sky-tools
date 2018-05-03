@@ -49,7 +49,7 @@ void createSave(string fn, Config[] configs)
 			if (node.isValue)
 				f.writefln("%s%s %s", '\t'.repeat(depth), name.quote, node.value.quote);
 			else
-			if (name == "gun" || name == "engine" || name == "turret")
+			if (name == "gun" || name == "engine" || name == "turret" || name == "explode")
 			{
 				node.iterLeaves(
 					(string[] path)
