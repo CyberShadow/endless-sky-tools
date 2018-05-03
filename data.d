@@ -40,7 +40,7 @@ final class Node
 	}
 }
 
-enum gameDir = "/home/vladimir/work/extern/endless-sky";
+enum gameDir = "game"; // clone or create symlink as necessary
 
 @property const(Node) gameData()
 {

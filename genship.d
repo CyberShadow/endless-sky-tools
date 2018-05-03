@@ -59,7 +59,7 @@ void main()
 			config.sort();
 			printConfig(config);
 			config.save("genship.json");
-			createSave(`/home/vladimir/Sync-PC/saves/endless-sky/saves/Test Drive.txt`, [config]);
+			createSave(`saves/Test Drive.txt`, [config]);
 		}
 
 		debug(metalog) StopWatch sw;
