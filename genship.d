@@ -93,7 +93,7 @@ void main()
 
 		void hillClimb()
 		{
-			immutable maxIterations = numOutfits * numOutfits;
+			immutable maxIterations = numOutfits * numOutfits * 2;
 
 			while (true)
 			{
