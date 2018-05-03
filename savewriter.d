@@ -33,10 +33,10 @@ void createSave(string fn, Config[] configs)
 		f.writefln("\tplanet %s", planet.quote);
 		if (auto pAttr = "attributes" in shipNode)
 		{
-			if (auto pStr = "required crew" in pAttr.children) f.writeln("\tcrew %s", pStr.value);
-			if (auto pStr = "fuel capacity" in pAttr.children) f.writeln("\tfuel %s", pStr.value);
-			if (auto pStr = "shields"       in pAttr.children) f.writeln("\tshields %s", pStr.value);
-			if (auto pStr = "hull"          in pAttr.children) f.writeln("\thull %s", pStr.value);
+			if (auto pStr = "required crew" in pAttr.children) f.writefln("\tcrew %s", pStr.value);
+			if (auto pStr = "fuel capacity" in pAttr.children) f.writefln("\tfuel %s", pStr.value);
+			if (auto pStr = "shields"       in pAttr.children) f.writefln("\tshields %s", pStr.value);
+			if (auto pStr = "hull"          in pAttr.children) f.writefln("\thull %s", pStr.value);
 		}
 		f.writeln();
 
