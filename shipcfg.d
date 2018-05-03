@@ -113,7 +113,7 @@ struct Config
 	}
 
 	Value idleEnergy() const @nogc { return stats.attributes[Attribute.shieldEnergy]; }
-	Value movementEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy]; }
+	Value movementEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy] / 2 /* TODO: calculate in degrees */; }
 	Value battleEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.firingEnergy]; }
 	Value pursueEnergy() const @nogc { return battleEnergy + stats.attributes[Attribute.thrustingEnergy]; }
 	Value fullEnergy() const @nogc { return movementEnergy + stats.attributes[Attribute.firingEnergy]; }
