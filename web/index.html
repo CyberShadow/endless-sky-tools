@@ -1,0 +1,591 @@
+<!doctype html>
+<html>
+
+	<title>Endless Sky Ship Optimizer</title>
+	<meta charset="UTF-8">
+
+	<link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
+	<link rel="shortcut icon" type='image/x-icon' href="game/icons/WinApp.ico">
+
+	<style>
+	 body {
+		 background-color: black;
+		 background-image: url('res/bg.jpg');
+		 color: #a7a7a7;
+		 font-family: 'Ubuntu', sans-serif;
+		 font-size: 11pt;
+		 padding: 70px 10% 0 10%;
+	 }
+
+	 #title {
+		 width: 0;
+		 margin: auto;
+
+	 }
+
+	 #title > div {
+		 height: 80px;
+		 padding-top: 50px;
+		 width: 300px;
+		 margin-left: -150px;
+		 background-image: url('game/images/_menu/title.png');
+		 background-repeat: no-repeat;
+		 text-align: center;
+		 color: #a0a0a0;
+		 text-transform: uppercase;
+		 letter-spacing: 4px;
+	 }
+
+	 .panel ::-webkit-scrollbar {
+		 width: 10px;
+		 height: 10px;
+	 }
+
+
+	 .panel ::-webkit-scrollbar-track-piece  {
+		 background-color: transparent;
+	 }
+
+	 .panel ::-webkit-scrollbar-thumb:horizontal {
+		 background-color: #444;
+	 }
+
+	 #testpanel {
+		 width: 100%;
+	 }
+
+	 .panel {
+		 box-sizing: border-box;
+		 /*border: 1px solid gray;*/
+		 border: 1px solid gray;
+		 /* border-image-source: linear-gradient(lightgreen, darkgreen); */
+		 border-image-source: linear-gradient(45deg, #808080, #404040, #c0c0c0);
+		 border-image-slice: 1;
+		 padding: 20px;
+		 background-color: #202020;
+		 background-image: radial-gradient(circle at 70% 70%, #303030, #202020);
+		 /* border-image: gradient(linear, left top, left bottom, from(#00abeb), to(#fff), color-stop(0.5, #fff), color-stop(0.5, #66cc00)) 21 30 30 21 repeat repeat; */
+		 /* border-image: gradient(linear, left top, left bottom, from(#00abeb), to(#fff), color-stop(0.5, #fff), color-stop(0.5, #66cc00)) 21 30 30 21 repeat repeat; */
+		 box-shadow: 0px 0px 5px 5px black;
+		 margin-bottom: 10px;
+		 cursor: default;
+	 }
+
+	 .buttons {
+		 display: flex;
+		 justify-content: space-between;
+	 }
+
+	 .buttons-left {
+		 display: flex;
+		 justify-content: flex-end;
+	 }
+	 .buttons-left .button {
+		 margin-right: 10px;
+	 }
+
+	 .buttons-right {
+		 display: flex;
+	 }
+	 .buttons-right .button {
+		 margin-left: 10px;
+	 }
+
+	 .button {
+		 padding: 5px;
+		 width: 100px;
+		 text-align: center;
+		 color: #ddd;
+	 }
+	 .button:hover {
+		 color: white;
+		 border-image-source: linear-gradient(45deg, #a0a0a0, #606060, #e0e0e0);
+	 }
+
+	 th {
+		 font-weight: normal;
+		 color: #e7e7e7;
+	 }
+
+	 #current-parts {
+		 overflow-x: auto;
+	 }
+	 #current-parts table {
+		 border-collapse: collapse;
+	 }
+	 #current-parts tr:first-child th {
+		 /* border-bottom: 1px solid rgba(0, 0, 0, 0.5); */
+		 border-bottom: 1px solid #a7a7a7;
+		 text-align: right;
+		 vertical-align: top;
+	 }
+	 #current-parts tr:first-child th:first-child {
+		 text-align: left;
+	 }
+	 #current-parts th,
+	 #current-parts td {
+		 padding-top: 1px;
+		 padding-right: 3px;
+		 padding-bottom: 1px;
+	 }
+	 #current-parts th:not(:first-child),
+	 #current-parts td:not(:first-child) {
+		 /* border-left: 1px solid rgba(0, 0, 0, 0.5); */
+		 padding-left: 3px;
+	 }
+	 #current-parts td {
+		 white-space: pre;
+		 text-align: right;
+	 }
+	 #current-parts td:first-child {
+		 text-align: left;
+	 }
+	 #current-parts tr.total {
+		 text-align: right;
+	 }
+	 #current-parts tr.total th {
+		 /* border-top: 1px solid rgba(0, 0, 0, 0.5); */
+		 border-top: 1px solid #a7a7a7;
+	 }
+	 #current-parts tr.total th:first-child {
+		 text-align: left;
+	 }
+
+	 #current-ship-header {
+		 margin-bottom: 10px;
+		 display: flex;
+		 justify-content: space-between;
+		 flex-wrap: wrap;
+		 white-space: pre;
+	 }
+	 #current-ship-name {
+	 }
+	 #current-ship-name span {
+		 padding-left: 1em;
+		 color: #e7e7e7;
+	 }
+	 #current-ship-score {
+	 }
+	 #current-ship-score span {
+		 color: #e7e7e7;
+		 min-width: 8em;
+		 display: inline-block;
+		 text-align: right;
+	 }
+
+	 #search-panel {
+		 margin-top: 40px;
+	 }
+	 #search-header {
+		 margin-top: 10px;
+	 }
+	 #search-table {
+		 width: 100%;
+		 border-collapse: collapse;
+	 }
+	 #search-table tr:first-child th {
+		 border-bottom: 1px solid #a7a7a7;
+	 }
+	 .search-group-start td {
+		 padding-top: 15px;
+	 }
+	 #search-table th {
+		 text-align: left;
+	 }
+	 #search-table th:nth-child(4),
+	 #search-table th:nth-child(5),
+	 #search-table td:nth-child(4),
+	 #search-table td:nth-child(5) {
+		 text-align: right;
+	 }
+	 #search-table .scenario-name {
+		 color: #e7e7e7;
+	 }
+	 #search-table tr.search-spacer td {
+		 padding-top: 15px;
+	 }
+	 #search-table tr:last-child th {
+		 border-top: 1px solid #a7a7a7;
+	 }
+	</style>
+
+	<body>
+		<div id="title">
+			<div>
+				Ship Optimizer
+			</div>
+		</div>
+
+		<div class="panel" id="testpanel">
+			<div id="current-ship-header">
+				<div id="current-ship-name">ship: <span>Bird of Prey</span></div>
+				<div id="current-ship-score">score: <span>28427946</span></div>
+			</div>
+
+			<div id="current-parts">
+				<!-- super-temporary hack - speed up my editor's syntax highlighting -->
+				<script>document.write(`
+<table>
+<tr><th>name</th><th>cost</th><th>mass</th><th>bunks</th><th>cargo space</th><th>outfit space</th><th>weapon cap.</th><th>engine cap.</th><th>heat diss.</th><th>thrust</th><th>thrust energy</th><th>thrust heat</th><th>turn</th><th>turn energy</th><th>turn heat</th><th>energy cap.</th><th>energy gen.</th><th>heat gen.</th><th>cooling</th><th>active cooling</th><th>cooling ineff.</th><th>gun ports</th><th>turret mounts</th><th>firing energy</th><th>firing heat</th><th>shield damage</th><th>shield gen.</th><th>shield energy</th><th>shield heat</th></tr>
+<tr><td>Osprey</td><td>4400000</td><td>270</td><td>24</td><td>40</td><td>450</td><td>180</td><td>130</td><td>0.8</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>4</td><td>2</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>Thruster (Planetary Class)</td><td>1216000</td><td>69</td><td></td><td></td><td>-69</td><td></td><td>-69</td><td></td><td>80</td><td>8.9</td><td>22.7</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>Steering (Planetary Class)</td><td>1077000</td><td>52</td><td></td><td></td><td>-52</td><td></td><td>-52</td><td></td><td></td><td></td><td></td><td>2069.6</td><td>4.6</td><td>14.2</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>Pulse Cannon</td><td>130000</td><td>13</td><td></td><td></td><td>-13</td><td>-13</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>-1</td><td></td><td>1.2</td><td>3.5</td><td>2.07</td><td></td><td></td><td></td></tr>
+<tr><td>Pulse Cannon</td><td>130000</td><td>13</td><td></td><td></td><td>-13</td><td>-13</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>-1</td><td></td><td>1.2</td><td>3.5</td><td>2.07</td><td></td><td></td><td></td></tr>
+<tr><td>Pulse Cannon</td><td>130000</td><td>13</td><td></td><td></td><td>-13</td><td>-13</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>-1</td><td></td><td>1.2</td><td>3.5</td><td>2.07</td><td></td><td></td><td></td></tr>
+<tr><td>Pulse Cannon</td><td>130000</td><td>13</td><td></td><td></td><td>-13</td><td>-13</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>-1</td><td></td><td>1.2</td><td>3.5</td><td>2.07</td><td></td><td></td><td></td></tr>
+<tr><td>Pulse Turret</td><td>590000</td><td>34</td><td></td><td></td><td>-34</td><td>-34</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>-1</td><td>2.4</td><td>7</td><td>4.14</td><td></td><td></td><td></td></tr>
+<tr><td>Fusion Reactor</td><td>5000000</td><td>100</td><td></td><td></td><td>-100</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>18.2</td><td>40</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>Hai Diamond Regenerator</td><td>1150000</td><td>49</td><td></td><td></td><td>-49</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>2.5</td><td>2.5</td><td>9</td></tr>
+<tr><td>Systems Core (Medium)</td><td>3630000</td><td>53</td><td></td><td></td><td>-53</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>2600</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>3.1</td><td>4.6</td><td></td></tr>
+<tr><td>Liquid Nitrogen Cooler</td><td>60000</td><td>20</td><td></td><td></td><td>-20</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>29</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>Hyperdrive</td><td>50000</td><td>20</td><td></td><td></td><td>-20</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>&#65279;</td></tr>
+<tr><td>&#65279;</td></tr>
+<tr><td>&#65279;</td></tr>
+<tr><td>&#65279;</td></tr>
+<tr><td>&#65279;</td></tr>
+<tr><td>&#65279;</td></tr>
+<tr class="total"><th>Total</th><th>17693000</th><th>719</th><th>24</th><th>40</th><th>1</th><th>94</th><th>9</th><th>0.8</th><th>80</th><th>8.9</th><th>22.7</th><th>2069.6</th><th>4.6</th><th>14.2</th><th>2600</th><th>18.2</th><th>40</th><th>29</th><th>0</th><th>0</th><th>0</th><th>1</th><th>7.2</th><th>21</th><th>12.42</th><th>5.6</th><th>7.1</th><th>9</th></tr>
+</table>
+`);
+				</script>
+</div>
+		</div>
+
+		<div class="buttons" id="ship-buttons">
+			<div class="buttons-left">
+				<div class="panel button">Add Outfit</div>
+			</div>
+			<div class="buttons-right">
+				<div class="panel button">New Ship</div>
+				<div class="panel button">Load Ship</div>
+				<div class="panel button">Save Ship</div>
+				<div class="panel button">Share Ship</div>
+			</div>
+		</div>
+
+
+		<div class="panel" id="search-panel">
+			<table id="search-table">
+				<tr>
+					<th></th>
+					<th>parameter</th>
+					<th>rule</th>
+					<th>value</th>
+					<th>score</th>
+				</tr>
+
+				<tr class="search-group-start">
+					<td>built-in parameters:</td>
+					<td>hyperdrive</td>
+					<td><u>must be at least</u> <u>1</u></td>
+					<td>[ok] 1</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>energy capacity</td>
+					<td><u>adds</u> <u>200000</u> points per unit with <u>20</u>% fall-off</td>
+					<td>2600</td>
+					<td>1372862</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>shield generation</td>
+					<td><u>must be at least</u> <u>1</u></td>
+					<td>[ok] 5.6</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>shield generation</td>
+					<td><u>adds</u> <u>2500000</u> points per unit with <u>20</u>% fall-off</td>
+					<td>5.6</td>
+					<td>2796139</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>outfit space</td>
+					<td><u>must be at least</u> <u>1</u></td>
+					<td>1</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>cost</td>
+					<td><u>subtracts</u> <u>0.0005</u> points per unit with <u>0</u>% fall-off</td>
+					<td>17693000</td>
+					<td>-8846</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><u>[add rule]</td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+
+				<tr class="search-group-start">
+					<td>computed parameters:</td>
+					<td>acceleration</td>
+					<td><u>must be at least</u> <u>400</u></td>
+					<td>[ok] 400.55</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>acceleration</td>
+					<td><u>adds</u> <u>2500000</u> points per unit with <u>20</u>% fall-off</td>
+					<td>400.55</td>
+					<td>12499005</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>turn speed</td>
+					<td><u>must be at least</u> <u>160</u></td>
+					<td>[ok] 172.7</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>turn speed</td>
+					<td><u>adds</u> <u>2000000</u> points per unit with <u>20</u>% fall-off</td>
+					<td>172.7</td>
+					<td>8334346</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>part count</td>
+					<td><u>subtracts</u> <u>1</u> points per unit with <u>0</u>% fall-off</td>
+					<td>13</td>
+					<td>-13</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><u>[add rule]</td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+
+				<tr class="search-group-start">
+					<td>scenario: <span class="scenario-name">idle</span></td>
+					<td><u>[add parameter]</u></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+
+				<tr class="search-group-start">
+					<td></td>
+					<td>target heat level (%)</td>
+					<td><u>must be at most</u> <u>100</u></td>
+					<td>[ok] 34.77</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><u>[add rule]</td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+
+
+				<tr class="search-group-start">
+					<td>scenario: <span class="scenario-name">movement</span></td>
+					<td>thruster utilization</td>
+					<td><u>is (%)</u> <u>100</u></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>steering utilization</td>
+					<td><u>is (%)</u> <u>50</u></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>shield generation</td>
+					<td><u>is (%)</u> <u>100</u></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><u>[add parameter]</u></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+
+				<tr class="search-group-start">
+					<td></td>
+					<td>energy duration (frames)</td>
+					<td><u>must be at least</u> <u>1800</u></td>
+					<td>[ok] 26000</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>target heat level (%)</td>
+					<td><u>must be at most</u> <u>100</u></td>
+					<td>[ok] 34.77</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><u>[add rule]</td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+
+				<tr class="search-group-start">
+					<td>scenario: <span class="scenario-name">battle</span></td>
+					<td>shield generation</td>
+					<td><u>is (%)</u> <u>100</u></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>gun utilization</td>
+					<td><u>is (%)</u> <u>100</u></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>turret utilization</td>
+					<td><u>is (%)</u> <u>100</u></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><u>[add parameter]</u></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+
+				<tr class="search-group-start">
+					<td></td>
+					<td>energy duration (frames)</td>
+					<td><u>must be at least</u> <u>600</u></td>
+					<td>[ok] ∞</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>weapon shield damage</td>
+					<td><u>adds</u> <u>2000000</u> points per unit with <u>20</u>% fall-off</td>
+					<td>12.42</td>
+					<td>3434453</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><u>[add rule]</td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+
+				<tr class="search-group-start">
+					<td>scenario: <span class="scenario-name">pursue</span></td>
+					<td>shield generation</td>
+					<td><u>is (%)</u> <u>100</u></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>gun utilization</td>
+					<td><u>is (%)</u> <u>100</u></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>turret utilization</td>
+					<td><u>is (%)</u> <u>100</u></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>thruster utilization</td>
+					<td><u>is (%)</u> <u>100</u></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><u>[add parameter]</u></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+
+				<tr class="search-group-start">
+					<td></td>
+					<td>energy duration (frames)</td>
+					<td><u>must be at least</u> <u>300</u></td>
+					<td>[ok] 520</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><u>[add rule]</td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+
+				<tr class="search-group-start">
+					<td><u>[add scenario]</u></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+
+				<tr class="search-spacer">
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr class="search-total">
+					<th></th>
+					<th>total:</th>
+					<th></th>
+					<th></th>
+					<th>28427946</th>
+				</tr>
+			</table>
+
+			<div id="search-header">
+				Will search optimal configuration in %d ships and %d outfits, using %d checks and %d scoring rules, in %d CPU threads.
+			</div>
+		</div>
+
+		<div class="buttons" id="ship-buttons">
+			<div class="buttons-left">
+				<div class="panel button">Item LIst</div>
+			</div>
+			<div class="buttons-right">
+				<div class="panel button">Search!</div>
+				<div class="panel button">Clear Rules</div>
+				<div class="panel button">Load Rules</div>
+				<div class="panel button">Save Rules</div>
+				<div class="panel button">Share Rules</div>
+			</div>
+		</div>
+
+	</body>
+</html>
