@@ -328,6 +328,8 @@ void combineOdds(ref real val, real newVal)
 	val = min(val + newVal, 1);
 }
 
+debug = verbose;
+
 void main()
 {
 	// How likely we are to get here
@@ -342,7 +344,7 @@ void main()
 			auto victimCrew = victimInitCrew - step + ofs;
 			if (playerCrew <= 0 || victimCrew <= 0)
 				continue;
-			//writefln("== (%d,%d) ==", playerInitCrew-playerCrew, victimInitCrew-victimCrew);
+			debug(verbose) writefln("== (%d,%d) ==", playerInitCrew-playerCrew, victimInitCrew-victimCrew);
 
 			auto currentOdds = odds[playerCrew][victimCrew];
 			if (currentOdds == 0)
@@ -368,16 +370,17 @@ void main()
 
 			auto oldValue = odds[playerCrew][victimCrew-1];
 			combineOdds(odds[playerCrew][victimCrew-1], currentOdds * bestWinOdds);
-			//writefln("(%d,%d) += %s * %s (%s): %s -> %s", playerInitCrew-playerCrew, victimInitCrew-(victimCrew-1), currentOdds, bestWinOdds, currentOdds * bestWinOdds, oldValue, odds[playerCrew][victimCrew-1]);
+			debug(verbose) writefln("(%d,%d) += %s * %s (%s): %s -> %s", playerInitCrew-playerCrew, victimInitCrew-(victimCrew-1), currentOdds, bestWinOdds, currentOdds * bestWinOdds, oldValue, odds[playerCrew][victimCrew-1]);
 
 			oldValue = odds[playerCrew-1][victimCrew];
 			combineOdds(odds[playerCrew-1][victimCrew], currentOdds * bestLoseOdds);
-			//writefln("(%d,%d) += %s * %s (%s): %s -> %s", playerInitCrew-(playerCrew-1), victimInitCrew-victimCrew, currentOdds, bestLoseOdds, currentOdds * bestLoseOdds, oldValue, odds[playerCrew-1][victimCrew]);
+			debug(verbose) writefln("(%d,%d) += %s * %s (%s): %s -> %s", playerInitCrew-(playerCrew-1), victimInitCrew-victimCrew, currentOdds, bestLoseOdds, currentOdds * bestLoseOdds, oldValue, odds[playerCrew-1][victimCrew]);
 		}
 	}
 
-	//foreach (i, row; odds)
-	//	writefln("%(%10g\t%)", row[]);
+	debug(verbose)
+	foreach (i, row; odds)
+		writefln("%(%10g\t%)", row[]);
 
 	auto winOdds = odds[].map!(row => row[0]).sum();
 	writefln("Win odds: %f%% (1 in %d)", 100 * winOdds, cast(int)(1 / winOdds));
