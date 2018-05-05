@@ -323,9 +323,9 @@ void combineOdds(ref real val, real newVal)
 {
 	//if (val < newVal) val = newVal;
 	// val += newVal;
-	//val = 1 - ((1 - val) * newVal);
+	val = 1 - ((1 - val) * (1 - newVal));
 	// val *= newVal;
-	val = min(val + newVal, 1);
+	// val = min(val + newVal, 1);
 }
 
 debug = verbose;
@@ -382,6 +382,9 @@ void main()
 	foreach (i, row; odds)
 		writefln("%(%10g\t%)", row[]);
 
-	auto winOdds = odds[].map!(row => row[0]).sum();
+	//auto winOdds = odds[].map!(row => row[0]).sum();
+	real winOdds = 0;
+	foreach (row; odds)
+		combineOdds(winOdds, row[0]);
 	writefln("Win odds: %f%% (1 in %d)", 100 * winOdds, cast(int)(1 / winOdds));
 }
