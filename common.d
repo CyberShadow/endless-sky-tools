@@ -256,7 +256,8 @@ shared static this()
 		// Outfit(0.0, 60.0, 0), // intrusion countermeasures
 	]);
 	auto victimShip = Ship(victimInitCrew, [
-		Outfit(0.0, 60.0, 6), // intrusion countermeasures
+		//Outfit(0.0, 60.0, 6), // intrusion countermeasures
+		Outfit(1.6, 2.4, 150), // korath repeater rifle
 	]);
 	attackOdds = cast(immutable)CaptureOdds(playerShip, victimShip);
 	defenseOdds = cast(immutable)CaptureOdds(victimShip, playerShip);
