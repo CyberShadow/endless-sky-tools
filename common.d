@@ -315,3 +315,12 @@ real getWinChance(bool attacking, int playerCrew, int victimCrew)
 	}
 
 }
+
+bool shouldAttack(int playerCrew, int victimCrew)
+{
+	return
+		(playerCrew == playerInitCrew && victimCrew == victimInitCrew) ? true :
+		attackOdds.AttackerPower(playerCrew) > defenseOdds.DefenderPower(playerCrew) ? true :
+		defenseOdds.Odds(victimCrew, playerCrew) > .5 ? false :
+		true;
+}
