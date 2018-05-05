@@ -262,6 +262,13 @@ shared static this()
 	defenseOdds = cast(immutable)CaptureOdds(victimShip, playerShip);
 }
 
+bool enemyWillAttack(int playerCrew, int victimCrew)
+{
+	if (playerCrew == playerInitCrew && victimCrew == victimInitCrew)
+		return false;
+	return defenseOdds.Odds(victimCrew, playerCrew) > .5;
+}
+
 real getWinChance(bool attacking, int playerCrew, int victimCrew)
 {
 	if (playerCrew == 0)

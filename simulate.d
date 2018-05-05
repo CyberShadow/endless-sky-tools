@@ -41,7 +41,7 @@ survival odds (defending):	%s%%
 exected casualties:		%s
 
 Win odds: %s%%
-You %s. %s lose 1 crew.
+You %s, they %s. %s lose 1 crew.
 EOF",
 					playerCrew, playerAttackPower, playerDefensePower,
 					victimCrew, victimAttackPower, victimDefensePower,
@@ -54,6 +54,7 @@ EOF",
 
 					100 * winOdds,
 					attacking ? "attack" : "defend",
+					enemyWillAttack(playerCrew, victimCrew) ? "attack" : "defend",
 					won ? "They" : "You",
 				);
 
