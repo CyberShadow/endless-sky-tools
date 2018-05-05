@@ -10,8 +10,11 @@ import common;
 void main()
 {
 	int playerWins, totalWins;
+	int seed = 0;
 	while (true)
 	{
+		Xorshift rng;
+		rng.seed(++seed);
 		auto playerCrew = playerInitCrew;
 		auto victimCrew = victimInitCrew;
 
@@ -25,7 +28,7 @@ void main()
 			bool attacking = shouldAttack(playerCrew, victimCrew);
 
 			auto winOdds = getWinChance(attacking, playerCrew, victimCrew);
-			bool won = uniform(0.0, 1.0) < winOdds;
+			bool won = uniform(0.0, 1.0, rng) < winOdds;
 
 			debug(verbose)
 				writefln(q"EOF
@@ -65,7 +68,10 @@ EOF",
 		}
 
 		if (playerCrew)
+		{
 			playerWins++;
+			writefln("Won with seed %d", seed);
+		}
 		totalWins++;
 		if (totalWins % 1000 == 0)
 			writefln("%d / %d (%s%%) (one in %d)", playerWins, totalWins, real(playerWins) / totalWins, playerWins ? totalWins/playerWins : 0);
