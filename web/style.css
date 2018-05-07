@@ -1,0 +1,98 @@
+body {
+	background-color: black;
+	background-image: url('res/bg.jpg');
+	color: #a7a7a7;
+	font-family: 'Ubuntu', sans-serif;
+	font-size: 11pt;
+	padding: 70px 10% 0 10%;
+}
+
+#title {
+	width: 0;
+	margin: auto;
+
+}
+
+#title > div {
+	height: 80px;
+	padding-top: 50px;
+	width: 300px;
+	margin-left: -150px;
+	background-image: url('../game/images/_menu/title.png');
+	background-repeat: no-repeat;
+	text-align: center;
+	color: #a0a0a0;
+	text-transform: uppercase;
+	letter-spacing: 4px;
+}
+
+.panel ::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+
+
+.panel ::-webkit-scrollbar-track-piece  {
+	background-color: transparent;
+}
+
+.panel ::-webkit-scrollbar-thumb:horizontal {
+	background-color: #444;
+}
+
+#testpanel {
+	width: 100%;
+}
+
+.panel {
+	box-sizing: border-box;
+	/*border: 1px solid gray;*/
+	border: 1px solid gray;
+	/* border-image-source: linear-gradient(lightgreen, darkgreen); */
+	border-image-source: linear-gradient(45deg, #808080, #404040, #c0c0c0);
+	border-image-slice: 1;
+	padding: 20px;
+	background-color: #202020;
+	background-image: radial-gradient(circle at 70% 70%, #303030, #202020);
+	/* border-image: gradient(linear, left top, left bottom, from(#00abeb), to(#fff), color-stop(0.5, #fff), color-stop(0.5, #66cc00)) 21 30 30 21 repeat repeat; */
+	/* border-image: gradient(linear, left top, left bottom, from(#00abeb), to(#fff), color-stop(0.5, #fff), color-stop(0.5, #66cc00)) 21 30 30 21 repeat repeat; */
+	box-shadow: 0px 0px 5px 5px black;
+	margin-bottom: 10px;
+	cursor: default;
+}
+
+.buttons {
+	display: flex;
+	justify-content: space-between;
+}
+
+.buttons-left {
+	display: flex;
+	justify-content: flex-end;
+}
+.buttons-left .button {
+	margin-right: 10px;
+}
+
+.buttons-right {
+	display: flex;
+}
+.buttons-right .button {
+	margin-left: 10px;
+}
+
+.button {
+	padding: 5px;
+	width: 100px;
+	text-align: center;
+	color: #ddd;
+}
+.button:hover {
+	color: white;
+	border-image-source: linear-gradient(45deg, #a0a0a0, #606060, #e0e0e0);
+}
+
+th {
+	font-weight: normal;
+	color: #e7e7e7;
+}
