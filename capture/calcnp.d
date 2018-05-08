@@ -17,15 +17,15 @@ void main()
 	real[victimInitCrew+1][playerInitCrew+1] odds = 0;
 	odds[playerInitCrew][victimInitCrew] = 1;
 
-	foreach (step; 0 .. playerInitCrew + victimInitCrew)
+	foreach (step; 0 .. playerInitCrew + victimInitCrew + 2)
 	{
 		foreach (ofs; 0..step+1)
 		{
 			auto playerCrew = playerInitCrew - ofs;
 			auto victimCrew = victimInitCrew - step + ofs;
-			if (playerCrew <= 0 || victimCrew <= 0)
+			if (playerCrew < 0 || victimCrew < 0)
 				continue;
-			debug(verbose) writefln("== (%d,%d) ==", playerInitCrew-playerCrew, victimInitCrew-victimCrew);
+			debug(verbose) writefln("== (%d,%d) / (%d,%d) ==", playerInitCrew-playerCrew, victimInitCrew-victimCrew, playerCrew, victimCrew);
 
 			auto currentOdds = odds[playerCrew][victimCrew];
 			if (currentOdds == 0)
@@ -40,14 +40,20 @@ void main()
 			assert(winOdds >= 0);
 			assert(winOdds <= 1);
 
-			auto oldValue = odds[playerCrew][victimCrew-1];
-			combineOdds(odds[playerCrew][victimCrew-1], currentOdds * winOdds);
-			debug(verbose) writefln("(%d,%d) += %s * %s (%s): %s -> %s", playerInitCrew-playerCrew, victimInitCrew-(victimCrew-1), currentOdds, winOdds, currentOdds * winOdds, oldValue, odds[playerCrew][victimCrew-1]);
+			if (victimCrew > 0)
+			{
+				auto oldValue = odds[playerCrew][victimCrew-1];
+				combineOdds(odds[playerCrew][victimCrew-1], currentOdds * winOdds);
+				debug(verbose) writefln("(%d,%d) += %s * %s (%s): %s -> %s", playerInitCrew-playerCrew, victimInitCrew-(victimCrew-1), currentOdds, winOdds, currentOdds * winOdds, oldValue, odds[playerCrew][victimCrew-1]);
+			}
 
-			auto loseOdds = 1 - winOdds;
-			oldValue = odds[playerCrew-1][victimCrew];
-			combineOdds(odds[playerCrew-1][victimCrew], currentOdds * loseOdds);
-			debug(verbose) writefln("(%d,%d) += %s * %s (%s): %s -> %s", playerInitCrew-(playerCrew-1), victimInitCrew-victimCrew, currentOdds, loseOdds, currentOdds * loseOdds, oldValue, odds[playerCrew-1][victimCrew]);
+			if (playerCrew > 0)
+			{
+				auto loseOdds = 1 - winOdds;
+				auto oldValue = odds[playerCrew-1][victimCrew];
+				combineOdds(odds[playerCrew-1][victimCrew], currentOdds * loseOdds);
+				debug(verbose) writefln("(%d,%d) += %s * %s (%s): %s -> %s", playerInitCrew-(playerCrew-1), victimInitCrew-victimCrew, currentOdds, loseOdds, currentOdds * loseOdds, oldValue, odds[playerCrew-1][victimCrew]);
+			}
 		}
 	}
 
