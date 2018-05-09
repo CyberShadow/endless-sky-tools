@@ -9,25 +9,27 @@ import common;
 
 void main()
 {
+	auto problem = getProblem();
+
 	int playerWins, totalWins;
 	int seed = 0;
 	while (true)
 	{
 		Xorshift rng;
 		rng.seed(++seed);
-		auto playerCrew = playerInitCrew;
-		auto victimCrew = victimInitCrew;
+		auto playerCrew = problem.playerInitCrew;
+		auto victimCrew = problem.victimInitCrew;
 
 		while (playerCrew && victimCrew)
 		{
-			auto playerAttackPower = attackOdds.AttackerPower(playerCrew);
-			auto playerDefensePower = defenseOdds.DefenderPower(playerCrew);
-			auto victimAttackPower = defenseOdds.AttackerPower(victimCrew);
-			auto victimDefensePower = attackOdds.DefenderPower(victimCrew);
+			auto playerAttackPower = problem.attackOdds.AttackerPower(playerCrew);
+			auto playerDefensePower = problem.defenseOdds.DefenderPower(playerCrew);
+			auto victimAttackPower = problem.defenseOdds.AttackerPower(victimCrew);
+			auto victimDefensePower = problem.attackOdds.DefenderPower(victimCrew);
 
-			bool attacking = shouldAttack(playerCrew, victimCrew);
+			bool attacking = problem.shouldAttack(playerCrew, victimCrew);
 
-			auto winOdds = getWinChance(attacking, playerCrew, victimCrew);
+			auto winOdds = problem.getWinChance(attacking, playerCrew, victimCrew);
 			bool won = uniform(0.0, 1.0, rng) < winOdds;
 
 			debug(verbose)

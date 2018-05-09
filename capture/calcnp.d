@@ -13,16 +13,18 @@ void combineOdds(ref real val, real newVal)
 
 void main()
 {
-	// How likely we are to get here
-	real[victimInitCrew+1][playerInitCrew+1] odds = 0;
-	odds[playerInitCrew][victimInitCrew] = 1;
+	auto problem = getProblem();
 
-	foreach (step; 0 .. playerInitCrew + victimInitCrew + 2)
+	// How likely we are to get here
+	real[problem.victimInitCrew+1][problem.playerInitCrew+1] odds = 0;
+	odds[problem.playerInitCrew][problem.victimInitCrew] = 1;
+
+	foreach (step; 0 .. problem.playerInitCrew + problem.victimInitCrew + 2)
 	{
 		foreach (ofs; 0..step+1)
 		{
-			auto playerCrew = playerInitCrew - ofs;
-			auto victimCrew = victimInitCrew - step + ofs;
+			auto playerCrew = problem.playerInitCrew - ofs;
+			auto victimCrew = problem.victimInitCrew - step + ofs;
 			if (playerCrew < 0 || victimCrew < 0)
 				continue;
 			debug(verbose) writefln("== (%d,%d) / (%d,%d) ==", playerInitCrew-playerCrew, victimInitCrew-victimCrew, playerCrew, victimCrew);
@@ -32,9 +34,9 @@ void main()
 				continue;
 			assert(currentOdds <= 1);
 
-			bool attacking = shouldAttack(playerCrew, victimCrew);
+			bool attacking = problem.shouldAttack(playerCrew, victimCrew);
 
-			auto winOdds = getWinChance(attacking, playerCrew, victimCrew);
+			auto winOdds = problem.getWinChance(attacking, playerCrew, victimCrew);
 			if (winOdds.isNaN)
 				continue;
 			assert(winOdds >= 0);

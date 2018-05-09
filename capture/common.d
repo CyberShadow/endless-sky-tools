@@ -2,11 +2,6 @@ import std.algorithm.iteration;
 import std.algorithm.sorting;
 import std.array;
 
-enum playerInitCrew = 465;
-enum victimInitCrew = 794;
-//enum playerInitCrew = 5;
-//enum victimInitCrew = 5;
-
 // C++ shims
 
 uint size(T)(in T[] arr) { return cast(uint)arr.length; }
@@ -247,88 +242,104 @@ private:
 	double[] casualtiesD;
 }
 
-immutable CaptureOdds attackOdds, defenseOdds;
-shared static this()
+struct Problem
 {
-	auto playerShip = Ship(playerInitCrew, [
-		Outfit(2.8, 0.8, playerInitCrew), // nerve gas
+	//int playerInitCrew, victimInitCrew;
+	enum playerInitCrew = 465; // TODO
+	enum victimInitCrew = 794; // TODO
+
+	CaptureOdds attackOdds, defenseOdds;
+
+	bool enemyWillAttack(int playerCrew, int victimCrew) const
+	{
+		if (playerCrew == playerInitCrew && victimCrew == victimInitCrew)
+			return false;
+		return defenseOdds.Odds(victimCrew, playerCrew) > .5;
+	}
+
+	real getWinChance(bool attacking, int playerCrew, int victimCrew) const
+	{
+		if (playerCrew == 0)
+			return 0;
+		if (victimCrew == 0)
+			return 1;
+		if (attacking && playerCrew <= 1)
+			return real.nan;
+
+		bool isFirstCaptureAction = playerCrew == playerInitCrew && victimCrew == victimInitCrew;
+
+		int yourStartCrew = playerCrew;
+		int enemyStartCrew = victimCrew;
+
+		// Figure out what action the other ship will take. As a special case,
+		// if you board them but immediately "defend" they will let you return
+		// to your ship in peace. That is to allow the player to "cancel" if
+		// they did not really mean to try to capture the ship.
+		bool youAttack = attacking;
+		bool enemyAttacks = defenseOdds.Odds(enemyStartCrew, yourStartCrew) > .5;
+		if(isFirstCaptureAction && !youAttack)
+			enemyAttacks = false;
+		isFirstCaptureAction = false;
+
+		// If neither side attacks, combat ends.
+		if(!youAttack && !enemyAttacks)
+		{
+			//messages.push_back("You retreat to your ships. Combat ends.");
+			//isCapturing = false;
+			return real.nan;
+		}
+		else
+		{
+			int yourCrew = playerCrew;
+			int enemyCrew = victimCrew;
+			if(!yourCrew || !enemyCrew)
+				assert(false);
+
+			// Your chance of winning this round is equal to the ratio of
+			// your power to the enemy's power.
+			double yourPower = (youAttack ?
+				attackOdds.AttackerPower(yourCrew) : defenseOdds.DefenderPower(yourCrew));
+			double enemyPower = (enemyAttacks ?
+				defenseOdds.AttackerPower(enemyCrew) : attackOdds.DefenderPower(enemyCrew));
+
+			double total = yourPower + enemyPower;
+			if(!total)
+				assert(false);
+
+			return yourPower / total;
+		}
+
+	}
+
+	bool shouldAttack(int playerCrew, int victimCrew) const
+	{
+		return
+			(playerCrew == playerInitCrew && victimCrew == victimInitCrew) ? true :
+			attackOdds.AttackerPower(playerCrew) > defenseOdds.DefenderPower(playerCrew) ? true :
+			defenseOdds.Odds(victimCrew, playerCrew) > .5 ? false :
+			true;
+	}
+}
+
+Problem getProblem()
+{
+	Problem problem;
+	// problem.playerInitCrew = 465;
+	// problem.victimInitCrew = 794;
+	//enum playerInitCrew = 5;
+	//enum victimInitCrew = 5;
+
+	auto playerShip = Ship(problem.playerInitCrew, [
+		Outfit(2.8, 0.8, problem.playerInitCrew), // nerve gas
 		// Outfit(1.6, 2.4, 1), // korath repeater rifle
 		// Outfit(0.0, 60.0, 0), // intrusion countermeasures
 	]);
-	auto victimShip = Ship(victimInitCrew, [
+	auto victimShip = Ship(problem.victimInitCrew, [
 		//Outfit(0.0, 60.0, 6), // intrusion countermeasures
 		Outfit(1.6, 2.4, 150), // korath repeater rifle
 	]);
-	attackOdds = cast(immutable)CaptureOdds(playerShip, victimShip);
-	defenseOdds = cast(immutable)CaptureOdds(victimShip, playerShip);
-}
 
-bool enemyWillAttack(int playerCrew, int victimCrew)
-{
-	if (playerCrew == playerInitCrew && victimCrew == victimInitCrew)
-		return false;
-	return defenseOdds.Odds(victimCrew, playerCrew) > .5;
-}
-
-real getWinChance(bool attacking, int playerCrew, int victimCrew)
-{
-	if (playerCrew == 0)
-		return 0;
-	if (victimCrew == 0)
-		return 1;
-	if (attacking && playerCrew <= 1)
-		return real.nan;
-	
-	bool isFirstCaptureAction = playerCrew == playerInitCrew && victimCrew == victimInitCrew;
-
-	int yourStartCrew = playerCrew;
-	int enemyStartCrew = victimCrew;
-
-	// Figure out what action the other ship will take. As a special case,
-	// if you board them but immediately "defend" they will let you return
-	// to your ship in peace. That is to allow the player to "cancel" if
-	// they did not really mean to try to capture the ship.
-	bool youAttack = attacking;
-	bool enemyAttacks = defenseOdds.Odds(enemyStartCrew, yourStartCrew) > .5;
-	if(isFirstCaptureAction && !youAttack)
-		enemyAttacks = false;
-	isFirstCaptureAction = false;
-		
-	// If neither side attacks, combat ends.
-	if(!youAttack && !enemyAttacks)
-	{
-		//messages.push_back("You retreat to your ships. Combat ends.");
-		//isCapturing = false;
-		return real.nan;
-	}
-	else
-	{
-		int yourCrew = playerCrew;
-		int enemyCrew = victimCrew;
-		if(!yourCrew || !enemyCrew)
-			assert(false);
-
-		// Your chance of winning this round is equal to the ratio of
-		// your power to the enemy's power.
-		double yourPower = (youAttack ?
-			attackOdds.AttackerPower(yourCrew) : defenseOdds.DefenderPower(yourCrew));
-		double enemyPower = (enemyAttacks ?
-			defenseOdds.AttackerPower(enemyCrew) : attackOdds.DefenderPower(enemyCrew));
-
-		double total = yourPower + enemyPower;
-		if(!total)
-			assert(false);
-
-		return yourPower / total;
-	}
-
-}
-
-bool shouldAttack(int playerCrew, int victimCrew)
-{
-	return
-		(playerCrew == playerInitCrew && victimCrew == victimInitCrew) ? true :
-		attackOdds.AttackerPower(playerCrew) > defenseOdds.DefenderPower(playerCrew) ? true :
-		defenseOdds.Odds(victimCrew, playerCrew) > .5 ? false :
-		true;
+	problem.attackOdds = CaptureOdds(playerShip, victimShip);
+	problem.defenseOdds = CaptureOdds(victimShip, playerShip);
+	return problem;
 }
