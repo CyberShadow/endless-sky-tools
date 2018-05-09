@@ -1,6 +1,5 @@
 import std.algorithm.comparison;
 import std.math;
-import std.range;
 import std.stdio;
 
 import common;
@@ -12,15 +11,21 @@ void combineOdds(ref real val, real newVal)
 
 // debug = verbose;
 
-void main()
+struct Result
 {
-	auto problem = getProblem();
+	real[][] odds;
+	real winOdds;
+}
+
+Result calculate(in ref Problem problem)
+{
+	Result result;
 
 	// How likely we are to get here
-	auto oddsBuf = new real[(problem.victimInitCrew+1) * (problem.playerInitCrew+1)];
-	oddsBuf[] = 0;
-	auto odds = oddsBuf.chunks(problem.victimInitCrew+1);
-	odds[problem.playerInitCrew][problem.victimInitCrew] = 1;
+	result.odds = new real[][](problem.playerInitCrew+1, problem.victimInitCrew+1);
+	foreach (row; result.odds)
+		row[] = 0;
+	result.odds[problem.playerInitCrew][problem.victimInitCrew] = 1;
 
 	foreach (step; 0 .. problem.playerInitCrew + problem.victimInitCrew + 2)
 	{
@@ -32,7 +37,7 @@ void main()
 				continue;
 			debug(verbose) writefln("== (%d,%d) / (%d,%d) ==", playerInitCrew-playerCrew, victimInitCrew-victimCrew, playerCrew, victimCrew);
 
-			auto currentOdds = odds[playerCrew][victimCrew];
+			auto currentOdds = result.odds[playerCrew][victimCrew];
 			if (currentOdds == 0)
 				continue;
 			assert(currentOdds <= 1);
@@ -47,28 +52,37 @@ void main()
 
 			if (victimCrew > 0)
 			{
-				auto oldValue = odds[playerCrew][victimCrew-1];
-				combineOdds(odds[playerCrew][victimCrew-1], currentOdds * winOdds);
+				auto oldValue = result.odds[playerCrew][victimCrew-1];
+				combineOdds(result.odds[playerCrew][victimCrew-1], currentOdds * winOdds);
 				debug(verbose) writefln("(%d,%d) += %s * %s (%s): %s -> %s", playerInitCrew-playerCrew, victimInitCrew-(victimCrew-1), currentOdds, winOdds, currentOdds * winOdds, oldValue, odds[playerCrew][victimCrew-1]);
 			}
 
 			if (playerCrew > 0)
 			{
 				auto loseOdds = 1 - winOdds;
-				auto oldValue = odds[playerCrew-1][victimCrew];
-				combineOdds(odds[playerCrew-1][victimCrew], currentOdds * loseOdds);
+				auto oldValue = result.odds[playerCrew-1][victimCrew];
+				combineOdds(result.odds[playerCrew-1][victimCrew], currentOdds * loseOdds);
 				debug(verbose) writefln("(%d,%d) += %s * %s (%s): %s -> %s", playerInitCrew-(playerCrew-1), victimInitCrew-victimCrew, currentOdds, loseOdds, currentOdds * loseOdds, oldValue, odds[playerCrew-1][victimCrew]);
 			}
 		}
 	}
 
+	//auto winOdds = odds[].map!(row => row[0]).sum();
+	result.winOdds = 0;
+	foreach (row; result.odds)
+		combineOdds(result.winOdds, row[0]);
+
+	return result;
+}
+
+void main()
+{
+	auto problem = getProblem();
+	auto result = calculate(problem);
+
 	debug(verbose)
 	foreach (i, row; odds)
 		writefln("%(%10g\t%)", row[]);
 
-	//auto winOdds = odds[].map!(row => row[0]).sum();
-	real winOdds = 0;
-	foreach (row; odds)
-		combineOdds(winOdds, row[0]);
-	writefln("Win odds: %f%% (1 in %d)", 100 * winOdds, cast(int)(1 / winOdds));
+	writefln("Win odds: %f%% (1 in %d)", 100 * result.winOdds, cast(int)(1 / result.winOdds));
 }
