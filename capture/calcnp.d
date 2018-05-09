@@ -1,5 +1,6 @@
 import std.algorithm.comparison;
 import std.math;
+import std.range;
 import std.stdio;
 
 import common;
@@ -16,7 +17,9 @@ void main()
 	auto problem = getProblem();
 
 	// How likely we are to get here
-	real[problem.victimInitCrew+1][problem.playerInitCrew+1] odds = 0;
+	auto oddsBuf = new real[(problem.victimInitCrew+1) * (problem.playerInitCrew+1)];
+	oddsBuf[] = 0;
+	auto odds = oddsBuf.chunks(problem.victimInitCrew+1);
 	odds[problem.playerInitCrew][problem.victimInitCrew] = 1;
 
 	foreach (step; 0 .. problem.playerInitCrew + problem.victimInitCrew + 2)

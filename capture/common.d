@@ -244,9 +244,7 @@ private:
 
 struct Problem
 {
-	//int playerInitCrew, victimInitCrew;
-	enum playerInitCrew = 465; // TODO
-	enum victimInitCrew = 794; // TODO
+	int playerInitCrew, victimInitCrew;
 
 	CaptureOdds attackOdds, defenseOdds;
 
@@ -324,10 +322,8 @@ struct Problem
 Problem getProblem()
 {
 	Problem problem;
-	// problem.playerInitCrew = 465;
-	// problem.victimInitCrew = 794;
-	//enum playerInitCrew = 5;
-	//enum victimInitCrew = 5;
+	problem.playerInitCrew = 465;
+	problem.victimInitCrew = 794;
 
 	auto playerShip = Ship(problem.playerInitCrew, [
 		Outfit(2.8, 0.8, problem.playerInitCrew), // nerve gas
