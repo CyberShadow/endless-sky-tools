@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+
+	<title>Endless Sky Capture Odds Calculator</title>
+	<meta charset="UTF-8">
+
+	<link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
+	<link rel="shortcut icon" type='image/x-icon' href="../../game/icons/WinApp.ico">
+	<link rel="stylesheet" type='text/css' href="../../web/style.css">
+
+	<style>
+	</style>
+
+	<script>
+	 var w = new Worker('worker.js');
+	 w.onmessage = function(event){
+		 document.getElementById("result").innerHTML += JSON.stringify(event.data);
+	 };
+
+	 w.postMessage({'funcName':'one', 'data':'', 'callbackId':123});
+	</script>
+
+	<body>
+		<div id="title">
+			<div>
+				Capture Odds Calculator
+			</div>
+		</div>
+
+		<div class="panel" id="testpanel">
+			Yada yada yada<br>
+			Yada yada yada<br>
+			Yada yada yada<br>
+			Yada yada yada<br>
+			Yada yada yada<br>
+
+
+			<div id="result">Nothing yet...</div>
+		</div>
+
+		<div class="buttons" id="ship-buttons">
+			<div class="buttons-left">
+				<div class="panel button">Add Outfit</div>
+			</div>
+			<div class="buttons-right">
+				<div class="panel button">New Ship</div>
+				<div class="panel button">Load Ship</div>
+				<div class="panel button">Save Ship</div>
+				<div class="panel button">Share Ship</div>
+			</div>
+		</div>
+	</body>
+</html>
