@@ -2,28 +2,31 @@ module worker;
 
 // Build with https://github.com/CyberShadow/dscripten-tools
 
+import core.stdc.stdio;
+import core.bitop;
+import core.checkedint;
+
+import ldc.arrayinit;
 import dscripten.standard;
-import dscripten.memory;
+import rt.lifetime;
 import dscripten.typeinfo;
 //import rt.dmain2;
 import rt.invariant_;
 
+import alloc;
 import calcnp;
 import common;
 
 extern(C)
-void main()
+void main() @nogc
 {
-	gc_init();
+	//gc_init();
 
-	import std.stdio;
+	Allocator allocator;
+	.allocator = &allocator;
 
 	auto problem = getProblem();
 	auto result = calculate(problem);
 
-	debug(verbose)
-	foreach (i, row; odds)
-		writefln("%(%10g\t%)", row[]);
-
-	writefln("Win odds: %f%% (1 in %d)", 100 * result.winOdds, cast(int)(1 / result.winOdds));
+	printf("Win odds: %f%% (1 in %d)\n", 100 * result.winOdds, cast(int)(1 / result.winOdds));
 }

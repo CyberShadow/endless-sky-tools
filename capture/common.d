@@ -1,30 +1,60 @@
+import std.algorithm.comparison;
 import std.algorithm.iteration;
 import std.algorithm.sorting;
 import std.array;
+import stdx.allocator : makeArray;
+
+import alloc;
+
+@nogc:
 
 // C++ shims
 
-uint size(T)(in T[] arr) { return cast(uint)arr.length; }
-bool empty(T)(in T[] arr) { return arr.length == 0; }
-void resize(T)(ref T[] arr, size_t len) { arr.length = len; }
-void resize(T)(ref T[] arr, size_t len, T value)
+struct Vector(T)
 {
-	auto oldLen = arr.length;
-	arr.length = len;
-	if (oldLen < len)
-		arr[oldLen..$] = value;
+	T[] buf;
+	size_t length;
+
+	uint size() const { return cast(uint)length; }
+
+	bool empty() const { return length == 0; }
+	void resize(size_t len) { reserve(len); length = len; }
+	void resize(size_t len, T value)
+	{
+		reserve(len);
+		auto oldLen = length;
+		length = len;
+		if (oldLen < len)
+			buf[oldLen..$] = value;
+	}
+	void reserve(size_t len)
+	{
+		if (len < buf.length)
+			return;
+		auto newBuf = allocator.makeArray!T(len);
+		newBuf[0..length] = buf[0..length];
+		buf = newBuf;
+	}
+	void push_back(T val) { if (length == buf.length) reserve(max(16, length * 2)); buf[length++] = val; }
+	ref inout(T) front() inout { return buf[0]; }
+	ref inout(T) back() inout { return buf[length-1]; }
+	ref inout(T) opIndex(size_t n) inout { return buf[n]; }
+	inout(T)[] opSlice() inout { return buf[0..length]; }
+
+	void opIndexOpAssign(string op)(T val, size_t n)
+	{
+		buf[n] = mixin(`buf[n]` ~ op ~ `val`);
+	}
 }
 alias unsigned = uint;
-void push_back(T)(ref T[] arr, T val) { arr ~= val; }
-ref T front(T)(T[] arr) { return arr[0]; }
-ref T back(T)(T[] arr) { return arr[$-1]; }
 
 // Some partial data structures
 
-struct Government { int CrewAttack() { return 1; } int CrewDefense() { return 2; } }
+struct Government { @nogc: int CrewAttack() { return 1; } int CrewDefense() { return 2; } }
 
 struct Outfit
 {
+@nogc:
 	double captureAttack, captureDefense;
 	uint count;
 
@@ -44,6 +74,7 @@ struct Outfit
 
 struct Ship
 {
+@nogc:
 	this(int crew, Outfit[] outfits) { this.crew = crew; this.outfits = outfits; }
 	int Crew() const { return crew; }
 	const(Outfit)[] Outfits() const { return outfits; }
@@ -58,7 +89,7 @@ private:
 struct CaptureOdds
 {
 public:
-	this(in ref Ship attacker, in ref Ship defender)
+	this(in ref Ship attacker, in ref Ship defender) @nogc
 	{
 		powerA = Power(attacker, false);
 		powerD = Power(defender, true);
@@ -67,7 +98,7 @@ public:
 
 	// Get the odds of the attacker winning if the two ships have the given
 	// number of crew members remaining.
-	double Odds(int attackingCrew, int defendingCrew) const
+	double Odds(int attackingCrew, int defendingCrew) const @nogc
 	{
 		// If the defender has no crew remaining, odds are 100%.
 		if(!defendingCrew)
@@ -117,7 +148,7 @@ public:
 
 	// Get the total power (inherent crew power plus bonuses from hand to hand
 	// weapons) for the attacker when they have the given number of crew remaining.
-	double AttackerPower(int attackingCrew) const
+	double AttackerPower(int attackingCrew) const @nogc
 	{
 		if(uint(attackingCrew - 1) >= powerA.size())
 			return 0.;
@@ -129,7 +160,7 @@ public:
 
 	// Get the total power (inherent crew power plus bonuses from hand to hand
 	// weapons) for the defender when they have the given number of crew remaining.
-	double DefenderPower(int defendingCrew) const
+	double DefenderPower(int defendingCrew) const @nogc
 	{
 		if(uint(defendingCrew - 1) >= powerD.size())
 			return 0.;
@@ -140,7 +171,7 @@ public:
 
 private:
 	// Generate the lookup tables.
-	void Calculate()
+	void Calculate() @nogc
 	{
 		if(powerD.empty() || powerA.empty())
 			return;
@@ -185,7 +216,7 @@ private:
 
 	// Map the given crew complements to an index in the lookup tables. There is no
 	// row in the table for 0 crew on either ship.
-	int Index(int attackingCrew, int defendingCrew) const
+	int Index(int attackingCrew, int defendingCrew) const @nogc
 	{
 		if(uint(attackingCrew - 1) > powerA.size())
 			//return -1;
@@ -201,9 +232,9 @@ private:
 
 	// Generate a vector with the total power of the given ship's crew when any
 	// number of them are left, either for attacking or for defending.
-	double[] Power(in ref Ship ship, bool isDefender)
+	Vector!double Power(in ref Ship ship, bool isDefender) @nogc
 	{
-		double[] power;
+		Vector!double power;
 		if(!ship.Crew())
 			return power;
 
@@ -218,10 +249,11 @@ private:
 		{
 			double value = outfit.Get(attribute);
 			if(value > 0. && outfit.count > 0)
-				power ~= [value].replicate(outfit.count);
+				foreach (n; 0..outfit.count)
+					power.push_back(value);
 		}
 		// Use the best weapons first.
-		power.sort!"a > b"();
+		power[].sort!"a > b"();
 
 		// Resize the vector to have exactly one entry per crew member.
 		power.resize(ship.Crew(), 0.);
@@ -236,21 +268,31 @@ private:
 	}
 
 private:
-	double[] powerA;
-	double[] powerD;
+	Vector!double powerA;
+	Vector!double powerD;
 	
 	// Capture odds lookup table.
-	double[] capture;
+	Vector!double capture;
 	// Expected casualties lookup table.
-	double[] casualtiesA;
-	double[] casualtiesD;
+	Vector!double casualtiesA;
+	Vector!double casualtiesD;
 }
 
 struct Problem
 {
+	@nogc:
 	int playerInitCrew, victimInitCrew;
 
 	CaptureOdds attackOdds, defenseOdds;
+
+	this(int playerCrew, int victimCrew, Ship playerShip, Ship victimShip)
+	{
+		this.playerInitCrew = playerCrew;
+		this.victimInitCrew = victimCrew;
+
+		attackOdds = CaptureOdds(playerShip, victimShip);
+		defenseOdds = CaptureOdds(victimShip, playerShip);
+	}
 
 	bool enemyWillAttack(int playerCrew, int victimCrew) const
 	{
@@ -323,23 +365,26 @@ struct Problem
 	}
 }
 
-Problem getProblem()
+Problem getProblem() @nogc
 {
-	Problem problem;
-	problem.playerInitCrew = 465;
-	problem.victimInitCrew = 794;
+	enum playerInitCrew = 465;
+	enum victimInitCrew = 794;
 
-	auto playerShip = Ship(problem.playerInitCrew, [
-		Outfit(2.8, 0.8, problem.playerInitCrew), // nerve gas
-		// Outfit(1.6, 2.4, 1), // korath repeater rifle
-		// Outfit(0.0, 60.0, 0), // intrusion countermeasures
-	]);
-	auto victimShip = Ship(problem.victimInitCrew, [
-		//Outfit(0.0, 60.0, 6), // intrusion countermeasures
-		Outfit(1.6, 2.4, 150), // korath repeater rifle
-	]);
+	return Problem(
+		playerInitCrew,
+		victimInitCrew,
 
-	problem.attackOdds = CaptureOdds(playerShip, victimShip);
-	problem.defenseOdds = CaptureOdds(victimShip, playerShip);
-	return problem;
+		// playerShip
+		Ship(playerInitCrew, allocator.makeArray!Outfit(1,
+			Outfit(2.8, 0.8, playerInitCrew), // nerve gas
+			// Outfit(1.6, 2.4, 1), // korath repeater rifle
+			// Outfit(0.0, 60.0, 0), // intrusion countermeasures
+		)),
+
+		// victimShip
+		Ship(victimInitCrew, allocator.makeArray!Outfit(1,
+			//Outfit(0.0, 60.0, 6), // intrusion countermeasures
+			Outfit(1.6, 2.4, 150), // korath repeater rifle
+		)),
+	);
 }

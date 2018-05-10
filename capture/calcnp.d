@@ -1,8 +1,10 @@
+import std.experimental.allocator;
 import std.math;
 
+import alloc;
 import common;
 
-void combineOdds(ref real val, real newVal)
+void combineOdds(ref real val, real newVal) @nogc
 {
 	val += newVal;
 }
@@ -15,14 +17,14 @@ struct Result
 	real winOdds;
 }
 
-Result calculate(in ref Problem problem)
+Result calculate(in ref Problem problem) @nogc
 {
 	Result result;
 
 	// How likely we are to get here
-	result.odds = new real[][](problem.playerInitCrew+1, problem.victimInitCrew+1);
-	foreach (row; result.odds)
-		row[] = 0;
+	result.odds = allocator.makeArray!(real[])(problem.playerInitCrew+1);
+	foreach (ref row; result.odds)
+		row = allocator.makeArray!real(problem.victimInitCrew+1, 0);
 	result.odds[problem.playerInitCrew][problem.victimInitCrew] = 1;
 
 	foreach (step; 0 .. problem.playerInitCrew + problem.victimInitCrew + 2)
