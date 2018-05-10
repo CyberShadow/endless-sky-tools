@@ -1,6 +1,4 @@
-import std.algorithm.comparison;
 import std.math;
-import std.stdio;
 
 import common;
 
@@ -75,8 +73,11 @@ Result calculate(in ref Problem problem)
 	return result;
 }
 
+version (dscripten) {} else
 void main()
 {
+	import std.stdio;
+
 	auto problem = getProblem();
 	auto result = calculate(problem);
 
