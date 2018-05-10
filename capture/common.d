@@ -145,6 +145,10 @@ private:
 		if(powerD.empty() || powerA.empty())
 			return;
 
+		capture.reserve(powerA.size() * powerD.size());
+		casualtiesA.reserve(powerA.size() * powerD.size());
+		casualtiesD.reserve(powerA.size() * powerD.size());
+
 		// The first row represents the case where the attacker has only one crew left.
 		// In that case, the defending ship can never be successfully captured.
 		capture.resize(powerD.size(), 0.);
