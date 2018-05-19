@@ -75,6 +75,7 @@ Result calculate(in ref Problem problem) @nogc
 	return result;
 }
 
+/*
 version (dscripten) {} else
 void main()
 {
@@ -89,3 +90,4 @@ void main()
 
 	writefln("Win odds: %f%% (1 in %d)", 100 * result.winOdds, cast(int)(1 / result.winOdds));
 }
+*/

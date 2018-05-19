@@ -1,5 +1,8 @@
 module worker;
 
+import ae.utils.appender;
+import ae.utils.json;
+
 import std.experimental.allocator;
 import std.stdio;
 
@@ -24,6 +27,11 @@ void main() @nogc
 
 	auto problem = getProblem();
 	auto result = calculate(problem);
+
+	alias Writer = PrettyJsonWriter!(FastAppender!(immutable(char), Allocator));
+	CustomJsonSerializer!Writer serializer;
+	serializer.put(result);
+	
 
 	printf("Win odds: %f%% (1 in %d)\n", 100 * result.winOdds, cast(int)(1 / result.winOdds));
 }

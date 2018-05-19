@@ -22,7 +22,15 @@ else
 }
 
 alias RegionAllocator = Region!BaseAllocator;
-alias Allocator = AllocatorList!((n) => RegionAllocator(max(n, 1024 * 4096)), BaseAllocator);
+//alias Allocator = AllocatorList!((n) => RegionAllocator(max(n, 1024 * 4096)), BaseAllocator);
+alias Allocator = AllocatorList!((n) {
+		import core.stdc.stdio;
+        printf("alloc: AllocatorList requested %d bytes\n", cast(int)n);
+		n += 16;
+		auto r = RegionAllocator(max(n, 1024 * 4096));
+		r.allocate(1);
+		return r;
+	}, BaseAllocator);
 __gshared Allocator* allocator;
 
 version (dscripten) {} else
