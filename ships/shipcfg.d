@@ -19,7 +19,7 @@ import std.utf;
 
 import shipdata;
 
-enum maxOutfits = 64;
+enum maxOutfits = 128;
 
 immutable ShipData shipData;
 shared static this() { shipData = cast(immutable)getShipData(); }
