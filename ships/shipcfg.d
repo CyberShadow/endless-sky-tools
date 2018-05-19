@@ -140,11 +140,25 @@ struct Config
 		return charge / drain;
 	}
 
-	// int coolingEfficiency() const @nogc
-	// {
-	// 	double x = stats.attributes[Attribute.coolingInefficiency];
-	// 	return 2. + 2. / (1. + exp(x / -2.)) - 4. / (1. + exp(x / -4.));
-	// }
+	Value coolingEfficiency() const @nogc
+	{
+		enum maxIneff = 16;
+		static immutable Value[maxIneff] table = (){
+			Value[maxIneff] result;
+			foreach (ineff; 0..maxIneff)
+			{
+				double x = ineff;
+				result[ineff] = 2. + 2. / (1. + exp(x / -2.)) - 4. / (1. + exp(x / -4.));
+			}
+			return result;
+		}();
+
+		auto v = stats.attributes[Attribute.coolingInefficiency];
+		assert(v.isInteger);
+		auto ineff = v.to!size_t;
+		if (ineff >= maxIneff) return Value(0);
+		return table[ineff];
+	}
 
 	/// Given this constant heat generation, what heat energy
 	/// (temperature*mass) will the ship settle on after an infinite
@@ -154,8 +168,8 @@ struct Config
 		auto heatDissipation = .001 * stats.attributes[Attribute.heatDissipation].to!double;
 
 		// This ship's cooling ability:
-		/*double*/auto coolingEfficiency = /*coolingEfficiency()*/1;
-		auto cooling = stats.attributes[Attribute.cooling];
+		/*double*/auto coolingEfficiency = coolingEfficiency();
+		auto cooling = coolingEfficiency * stats.attributes[Attribute.cooling];
 		//double activeCooling = coolingEfficiency * attributes.Get("active cooling");
 
 		// Idle heat is the heat level where:

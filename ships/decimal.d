@@ -21,7 +21,7 @@ struct Decimal(uint digits, Base = long)
 		opAssign(value);
 	}
 
-	string opAssign(string s)
+	typeof(this) opAssign(string s)
 	{
 		auto parts = s.findSplit(".");
 		auto intPart = parts[0];
@@ -38,7 +38,7 @@ struct Decimal(uint digits, Base = long)
 		while (fracPart.length < digits)
 			fracPart ~= "0";
 		rawValue = (intPart.to!int * factor + fracPart.to!int) * sign;
-		return s;
+		return this;
 	}
 
 	this(string s)
@@ -46,10 +46,17 @@ struct Decimal(uint digits, Base = long)
 		opAssign(s);
 	}
 
-	this(R)(R value)
+	typeof(this) opAssign(R)(R value)
 	if (is(R : real) && !is(R : long))
 	{
 		rawValue = cast(Base)(value * factor);
+		return this;
+	}
+
+	this(R)(R value)
+	if (is(R : real) && !is(R : long))
+	{
+		opAssign(value);
 	}
 
 	T to(T)() const @nogc
@@ -95,6 +102,11 @@ struct Decimal(uint digits, Base = long)
 			else
 				break;
 		return sign ~ str;
+	}
+
+	bool isInteger() const
+	{
+		return rawValue % factor == 0;
 	}
 
 	bool opCast(T)() const
