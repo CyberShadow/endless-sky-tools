@@ -365,26 +365,37 @@ struct Problem
 	}
 }
 
+enum Outfits
+{
+	laserRifle               = Outfit(0.6,  0.8),
+	fragmentationGrenades    = Outfit(1.3,  0.3),
+	nerveGas                 = Outfit(2.8,  0.8),
+	pulseRifle               = Outfit(0.7,  1.0),
+	korathRepeaterRifle      = Outfit(1.6,  2.4),
+	intrusionCountermeasures = Outfit(0.0, 60.0),
+}
+Outfit qty(Outfit o, uint count) { o.count = count; return o; }
+
 Problem getProblem() @nogc
 {
 	enum playerInitCrew = 465;
 	enum victimInitCrew = 794;
 
+	auto playerOutfits = allocator.makeArray!Outfit(1);
+	playerOutfits[0] = Outfits.nerveGas                .qty(playerInitCrew);
+//	playerOutfits[1] = Outfits.korathRepeaterRifle     .qty(1);
+//	playerOutfits[1] = Outfits.fragmentationGrenades   .qty(1);
+//	playerOutfits[1] = Outfits.laserRifle              .qty(1);
+//	playerOutfits[1] = Outfits.intrusionCountermeasures.qty(1);
+
+	auto victimOutfits = allocator.makeArray!Outfit(1);
+//	victimOutfits[0] = Outfits.intrusionCountermeasures.qty(6);
+	victimOutfits[0] = Outfits.korathRepeaterRifle     .qty(150);
+
 	return Problem(
 		playerInitCrew,
 		victimInitCrew,
-
-		// playerShip
-		Ship(playerInitCrew, allocator.makeArray!Outfit(1,
-			Outfit(2.8, 0.8, playerInitCrew), // nerve gas
-			// Outfit(1.6, 2.4, 1), // korath repeater rifle
-			// Outfit(0.0, 60.0, 0), // intrusion countermeasures
-		)),
-
-		// victimShip
-		Ship(victimInitCrew, allocator.makeArray!Outfit(1,
-			//Outfit(0.0, 60.0, 6), // intrusion countermeasures
-			Outfit(1.6, 2.4, 150), // korath repeater rifle
-		)),
+		Ship(playerInitCrew, playerOutfits), // playerShip
+		Ship(victimInitCrew, victimOutfits), // victimShip
 	);
 }
