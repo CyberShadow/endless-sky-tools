@@ -35,14 +35,16 @@ Result calculate(in ref Problem problem) @nogc
 			auto victimCrew = problem.victimInitCrew - step + ofs;
 			if (playerCrew < 0 || victimCrew < 0)
 				continue;
-			debug(verbose) writefln("== (%d,%d) / (%d,%d) ==", playerInitCrew-playerCrew, victimInitCrew-victimCrew, playerCrew, victimCrew);
+			//debug(verbose) writefln("== (%d,%d) / (%d,%d) ==", playerInitCrew-playerCrew, victimInitCrew-victimCrew, playerCrew, victimCrew);
 
 			auto currentOdds = result.odds[playerCrew][victimCrew];
 			if (currentOdds == 0)
 				continue;
 			assert(currentOdds <= 1);
 
-			bool attacking = problem.shouldAttack(playerCrew, victimCrew);
+			bool attacking;
+			if (playerCrew != 0 && victimCrew != 0)
+				attacking = problem.shouldAttack(playerCrew, victimCrew);
 
 			auto winOdds = problem.getWinChance(attacking, playerCrew, victimCrew);
 			if (winOdds.isNaN)
@@ -54,7 +56,7 @@ Result calculate(in ref Problem problem) @nogc
 			{
 				auto oldValue = result.odds[playerCrew][victimCrew-1];
 				combineOdds(result.odds[playerCrew][victimCrew-1], currentOdds * winOdds);
-				debug(verbose) writefln("(%d,%d) += %s * %s (%s): %s -> %s", playerInitCrew-playerCrew, victimInitCrew-(victimCrew-1), currentOdds, winOdds, currentOdds * winOdds, oldValue, odds[playerCrew][victimCrew-1]);
+				//debug(verbose) writefln("(%d,%d) += %s * %s (%s): %s -> %s", playerInitCrew-playerCrew, victimInitCrew-(victimCrew-1), currentOdds, winOdds, currentOdds * winOdds, oldValue, odds[playerCrew][victimCrew-1]);
 			}
 
 			if (playerCrew > 0)
@@ -62,7 +64,7 @@ Result calculate(in ref Problem problem) @nogc
 				auto loseOdds = 1 - winOdds;
 				auto oldValue = result.odds[playerCrew-1][victimCrew];
 				combineOdds(result.odds[playerCrew-1][victimCrew], currentOdds * loseOdds);
-				debug(verbose) writefln("(%d,%d) += %s * %s (%s): %s -> %s", playerInitCrew-(playerCrew-1), victimInitCrew-victimCrew, currentOdds, loseOdds, currentOdds * loseOdds, oldValue, odds[playerCrew-1][victimCrew]);
+				//debug(verbose) writefln("(%d,%d) += %s * %s (%s): %s -> %s", playerInitCrew-(playerCrew-1), victimInitCrew-victimCrew, currentOdds, loseOdds, currentOdds * loseOdds, oldValue, odds[playerCrew-1][victimCrew]);
 			}
 		}
 	}
@@ -75,7 +77,6 @@ Result calculate(in ref Problem problem) @nogc
 	return result;
 }
 
-/*
 version (dscripten) {} else
 void main()
 {
@@ -85,9 +86,8 @@ void main()
 	auto result = calculate(problem);
 
 	debug(verbose)
-	foreach (i, row; odds)
+	foreach (i, row; result.odds)
 		writefln("%(%10g\t%)", row[]);
 
 	writefln("Win odds: %f%% (1 in %d)", 100 * result.winOdds, cast(int)(1 / result.winOdds));
 }
-*/
