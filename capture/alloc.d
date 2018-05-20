@@ -1,11 +1,11 @@
 module alloc;
 
 import std.algorithm.comparison;
-import stdx.allocator.building_blocks.stats_collector;
-import std.experimental.allocator.common;
 import stdx.allocator.building_blocks.allocator_list;
 import stdx.allocator.building_blocks.null_allocator;
 import stdx.allocator.building_blocks.region;
+import stdx.allocator.building_blocks.stats_collector;
+import stdx.allocator.common;
 import stdx.allocator.mallocator;
 
 alias OSAllocator = Mallocator;
