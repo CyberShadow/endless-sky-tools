@@ -112,7 +112,7 @@ struct Config
 		return 60 * stats.attributes[Attribute.turn] / stats.attributes[Attribute.mass];
 	}
 
-	Value idleEnergy() const @nogc { return stats.attributes[Attribute.shieldEnergy]; }
+	Value idleEnergy() const @nogc { return stats.attributes[Attribute.energyConsumption] + stats.attributes[Attribute.shieldEnergy]; }
 	Value movementEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy] / 2 /* TODO: calculate in degrees */; }
 	Value battleEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.firingEnergy]; }
 	Value pursueEnergy() const @nogc { return battleEnergy + stats.attributes[Attribute.thrustingEnergy]; }
@@ -278,7 +278,7 @@ struct Config
 		val("battle energy duration"  , energyDuration(battleEnergy  )            , v => v > 60 * 10                  , null                                    );
 		val("pursue energy duration"  , energyDuration(pursueEnergy  )            , v => v > 60 *  5                  , null                                    );
 		val("energy capacity"         , stats.attributes[Attribute.energyCapacity], null                              , v => scale(v, 200_000)                  );
-		val("energy charge ratio"     , energyChargeRatio                         , v => v == Value.max || v * 10 > 15, null                                    );
+		val("energy charge ratio"     , energyChargeRatio                         , v => v == Value.max || v > 1      , null                                    );
 
 		val("maximum heat"            , maxHeat                                   , null                              , null                                    );
 		val("idle heat"               , idleHeat                                  , null                              , null                                    );
@@ -386,6 +386,7 @@ string abbrevAttr(string s)
 		.replace(" generation", " gen.")
 		.replace(" inefficiency", " ineff.")
 		.replace(" dissipation", " diss.")
+		.replace(" consumption", " cons.")
 	;
 }
 

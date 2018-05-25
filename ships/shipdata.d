@@ -33,6 +33,7 @@ enum Attribute
 	turningHeat,
 	energyCapacity,
 	energyGeneration,
+	energyConsumption,
 	heatGeneration,
 	cooling,
 	activeCooling,
