@@ -112,8 +112,18 @@ struct Config
 		return 60 * stats.attributes[Attribute.turn] / stats.attributes[Attribute.mass];
 	}
 
+	/// Assuming we want to turn at least this many degrees per second, how much time do we need to spend turning?
+	Value turnTimeRatio(Value degreesPerSecond) const @nogc
+	{
+		auto turnSpeed = this.turnSpeed;
+		if (turnSpeed > degreesPerSecond)
+			return degreesPerSecond / turnSpeed;
+		else
+			return Value(1);
+	}
+
 	Value idleEnergy() const @nogc { return stats.attributes[Attribute.energyConsumption] + stats.attributes[Attribute.shieldEnergy]; }
-	Value movementEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy] / 2 /* TODO: calculate in degrees */; }
+	Value movementEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy] * turnTimeRatio(Value(60)); }
 	Value battleEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.firingEnergy]; }
 	Value pursueEnergy() const @nogc { return battleEnergy + stats.attributes[Attribute.thrustingEnergy]; }
 	Value fullEnergy() const @nogc { return movementEnergy + stats.attributes[Attribute.firingEnergy]; }
