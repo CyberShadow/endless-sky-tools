@@ -67,7 +67,7 @@ immutable string[enumLength!Attribute] attributeNames = ()
 	return arr;
 }();
 
-alias Value = Decimal!2;
+alias Value = Decimal!3;
 
 struct Item
 {
@@ -85,7 +85,7 @@ struct Item
 			{
 				auto value = (*pNode).value;
 				scope(failure) writefln("Error parsing attribute %(%s%) with value %(%s%)", [name], [value]);
-				attributes[attr] = value;
+				attributes[attr] = value.strip;
 			}
 		}
 	}
@@ -103,10 +103,17 @@ ShipData getShipData(bool all = false)
 	ShipData result;
 	foreach (name, node; gameData["ship"])
 	{
+		scope(failure) stderr.writeln("Error with ship: " ~ name);
 		if (!all && name !in knownItems) continue;
 		Item item;
 		item.name = name;
-		item.fromAttributes(node["attributes"]);
+		if (auto pNode = "attributes" in node)
+			item.fromAttributes(*pNode);
+		else
+		{
+			stderr.writeln("Skipping ship without attributes (variant?): ", name);
+			continue;
+		}
 		if (auto pNode = "gun" in node)
 			item.attributes[Attribute.gunPorts] = (){ int count; pNode.iterLeaves((_){count++;}); return count; }();
 		if (auto pNode = "turret" in node)

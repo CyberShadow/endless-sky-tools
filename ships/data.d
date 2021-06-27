@@ -50,11 +50,8 @@ enum gameDir = "game"; // clone or create symlink as necessary
 	{
 		root = new Node;
 		Node[] stack;
-		foreach (de; dirEntries(gameDir ~ "/data", "*.txt", SpanMode.shallow))
+		foreach (de; dirEntries(gameDir ~ "/data", "*.txt", SpanMode.depth))
 		{
-			if (de.baseName == "variants.txt")
-				continue;
-
 			scope(failure) writefln("Error reading file %s:", de.name);
 			foreach (i, line; de.readText.splitLines)
 			{
