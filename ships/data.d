@@ -25,7 +25,8 @@ final class Node
 	bool isValue() const { return children.length == 1 && children.byValue.front.children.length == 0; }
 
 	string onlyChildName() const { enforce(children.length == 1); return children.byKey.front; }
-	inout(Node) onlyChild() inout { enforce(children.length == 1); return children.byValue.front; }
+	Node onlyChild() { enforce(children.length == 1); return children.byValue.front; }
+	// inout(Node) onlyChild() inout { enforce(children.length == 1); return children.byValue.front; }
 
 	inout(Node) opIndex(string s) inout { return children[s]; }
 	override string toString() const { return format("%-(%s%)", children.byKeyValue.map!(kv => format("%(%s%)", [kv.key]) ~ "\n" ~ kv.value.toString().indent())); }
