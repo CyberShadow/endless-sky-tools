@@ -57,6 +57,7 @@ enum Attribute
 	shieldEnergy,
 	shieldHeat, // heat per unit of shields repaired
 
+	antiMissile,
 }
 
 immutable string[enumLength!Attribute] attributeNames = ()
@@ -64,6 +65,7 @@ immutable string[enumLength!Attribute] attributeNames = ()
 	string[] arr;
 	foreach (e; RangeTuple!(enumLength!Attribute))
 		arr ~= __traits(allMembers, Attribute)[e].splitByCamelCase.join(" ").toLower;
+	arr[Attribute.antiMissile] = "anti-missile";
 	return arr;
 }();
 
@@ -144,6 +146,9 @@ ShipData getShipData(bool all = false)
 				continue; // TODO: tons / cost of ammo per unit of time / damage?
 			if (auto pVelocity = "velocity" in *pWeapon)
 				item.weaponVelocity = Value(pVelocity.value);
+			foreach (attribute; [Attribute.antiMissile])
+				if (auto pValue = attributeNames[attribute] in *pWeapon)
+					item.attributes[attribute] += Value((*pValue).value.strip);
 
 			// Estimate effective DPS accounting for accuracy and projectile travel time
 			Value accMultiplier = 1;
