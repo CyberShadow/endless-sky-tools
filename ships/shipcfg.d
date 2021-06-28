@@ -317,12 +317,12 @@ struct Config
 		val("turning"                 , turnSpeed                                 , v => v >= 160                     , v => scale(v, 2_000_000)                );
 
 		auto shieldDamage = stats.attributes[Attribute.shieldDamage];
-		val("shield damage"           , shieldDamage                              , null                              , v => scale(v, 2_000_000)                );
+		val("shield damage"           , shieldDamage                              , null                              , v => scale(v,  5_000_000)                );
 
 		val("velocity mismatch"       , gunVelocityMismatch                       , null                              , v => -scale(v * shieldDamage, 2_000_000));
 
 		auto shieldGeneration = stats.attributes[Attribute.shieldGeneration];
-		val("shield generation"       , shieldGeneration                          , v => v > 0                        , v => scale(v, 2_500_000)                );
+		val("shield generation"       , shieldGeneration                          , v => v > 0                        , v => scale(v, 10_000_000)               );
 
 	//	val("anti missile"            , stats.attributes[Attribute.antiMissile   ], v => v > 0                        , null                                    );
 
