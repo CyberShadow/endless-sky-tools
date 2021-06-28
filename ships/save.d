@@ -65,7 +65,7 @@ import data;
 
 	foreach (line; "parts-overrides.txt".readText.splitLines)
 	{
-		if (!line.length)
+		if (!line.length || line.startsWith("#"))
 			continue;
 		else
 		if (line.skipOver("+"))
