@@ -1,3 +1,8 @@
+import std.algorithm.searching;
+import std.file;
+import std.stdio : stderr;
+import std.string;
+
 import ae.utils.aa;
 
 import data;
@@ -45,7 +50,7 @@ import data;
 	{
 		if (item !in itemKnown)
 		{
-			import std.stdio; writefln("Note: adding item from save which was not found in any known outfitters/shipyards: %s", item);
+			stderr.writefln("Note: adding item from save which was not found in any known outfitters/shipyards: %s", item);
 			itemKnown.add(item);
 		}
 	}
@@ -56,6 +61,26 @@ import data;
 		if (auto outfits = shipNode.get("outfits", null))
 			foreach (name, node; outfits)
 				addFromSave(name);
+	}
+
+	foreach (line; "parts-overrides.txt".readText.splitLines)
+	{
+		if (!line.length)
+			continue;
+		else
+		if (line.skipOver("+"))
+			if (line in itemKnown)
+				stderr.writeln("parts-overrides: Item already known: ", line);
+			else
+				itemKnown.add(line);
+		else
+		if (line.skipOver("-"))
+			if (line !in itemKnown)
+				stderr.writeln("parts-overrides: Item already \"not\" known: ", line);
+			else
+				itemKnown.remove(line);
+		else
+			stderr.writeln("parts-overrides: Unknown line: ", line);
 	}
 
 	return result;
