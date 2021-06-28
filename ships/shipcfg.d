@@ -319,7 +319,7 @@ struct Config
 		auto shieldGeneration = stats.attributes[Attribute.shieldGeneration];
 		val("shield generation"       , shieldGeneration                          , v => v > 0                        , v => scale(v, 2_500_000)                );
 
-		val("extra outfits space"     , stats.attributes[Attribute.outfitSpace   ], v => v >= 1                       , null                                    );
+		val("extra outfits space"     , stats.attributes[Attribute.outfitSpace   ], v => v >= 0                       , null                                    );
 
 		val("cost"                    , stats.attributes[Attribute.cost          ], null                              , v => -v.to!int / 2000                   );
 
