@@ -122,19 +122,22 @@ struct Config
 			return Value(1);
 	}
 
-	Value idleEnergy() const @nogc { return stats.attributes[Attribute.energyConsumption] + stats.attributes[Attribute.shieldEnergy]; }
-	Value movementEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.thrustingEnergy] + stats.attributes[Attribute.turningEnergy] * turnTimeRatio(Value(60)); }
-	Value battleEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.firingEnergy]; }
+	Value idleEnergy() const @nogc { return stats.attributes[Attribute.energyConsumption] /*+ stats.attributes[Attribute.shieldEnergy]*/; }
+	Value thrustEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.thrustingEnergy]; }
+	Value movementEnergy(int degreesPerSecond) const @nogc { return thrustEnergy + stats.attributes[Attribute.turningEnergy] * turnTimeRatio(Value(degreesPerSecond)); }
+	Value battleEnergy() const @nogc { return idleEnergy + stats.attributes[Attribute.firingEnergy] + stats.attributes[Attribute.shieldEnergy]; }
 	Value pursueEnergy() const @nogc { return battleEnergy + stats.attributes[Attribute.thrustingEnergy]; }
-	Value fullEnergy() const @nogc { return movementEnergy + stats.attributes[Attribute.firingEnergy]; }
+	Value fullEnergy() const @nogc { return movementEnergy(60) + stats.attributes[Attribute.firingEnergy]; }
 
 	// # of frames we can perform this activity without running out of juice
-	Value energyDuration(Value consumption) const @nogc
+	Value energyDuration(Value consumption, uint activeRatio = 1, uint idleRatio = 0) const @nogc
 	{
 		auto drain = consumption - stats.attributes[Attribute.energyGeneration];
 		if (drain <= 0)
 			return Value.max;
-		return stats.attributes[Attribute.energyCapacity] / drain;
+		auto totalRatio = activeRatio + idleRatio;
+		auto averageDrain = (drain * activeRatio + idleEnergy * idleRatio) / totalRatio;
+		return stats.attributes[Attribute.energyCapacity] / averageDrain;
 	}
 
 	// How fast do we drain energy (at full utilization) vs. recharge energy (at idle)?
@@ -281,10 +284,12 @@ struct Config
 				cb(description, ()=>value.toString(), score);
 		}
 
+		// TODO: turning/acceleration are absolute, but things like shield capacity and DPS depend on the ship class and where we are in the game
+
 		val("hyperdrive"              , stats.attributes[Attribute.hyperdrive    ], v => v > 0                        , null                                    );
 	//	val("ramscoop"                , stats.attributes[Attribute.ramscoop      ], v => v > 0                        , null                                    );
 
-		val("movement energy duration", energyDuration(movementEnergy)            , v => v > 60 * 30                  , null                                    );
+		val("thrust energy duration"  , energyDuration(thrustEnergy  )            , v => v > 60 * 60                  , null                                    );
 		val("battle energy duration"  , energyDuration(battleEnergy  )            , v => v > 60 * 10                  , null                                    );
 		val("pursue energy duration"  , energyDuration(pursueEnergy  )            , v => v > 60 *  5                  , null                                    );
 		val("energy capacity"         , stats.attributes[Attribute.energyCapacity], null                              , v => scale(v, 200_000)                  );
