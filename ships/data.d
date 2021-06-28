@@ -1,6 +1,7 @@
 import std.algorithm.comparison;
 import std.algorithm.iteration;
 import std.algorithm.searching;
+import std.array;
 import std.exception;
 import std.file;
 import std.path;
@@ -43,42 +44,46 @@ final class Node
 
 enum gameDir = "game"; // clone or create symlink as necessary
 
+Node loadData(string[] fileNames)
+{
+	Node root = new Node;
+	Node[] stack;
+	foreach (fn; fileNames)
+	{
+		scope(failure) writefln("Error reading file %s:", fn);
+		foreach (i, line; fn.readText.splitLines)
+		{
+			auto oline = line;
+			scope(failure) writefln("Error reading line %d (%(%s%)):", i+1, [oline]);
+			if (line.strip.length == 0 || line[0] == '#')
+				continue;
+			Node n = root;
+			size_t depth;
+			while (line.skipOver("\t"))
+				n = stack[min(depth++, $-1)]; // TODO: data bug?
+			while (line.length)
+			{
+				auto w = readWord(line);
+				while (line.skipOver(" ")) {}
+				auto pNext = w in n.children;
+				if (!pNext)
+				{
+					n.children[w] = new Node;
+					pNext = w in n.children;
+				}
+				n = *pNext;
+			}
+			stack = stack[0..min(depth, $)] ~ n;
+		}
+	}
+	return root;
+}
+
 @property const(Node) gameData()
 {
 	static Node root;
 	if (!root)
-	{
-		root = new Node;
-		Node[] stack;
-		foreach (de; dirEntries(gameDir ~ "/data", "*.txt", SpanMode.depth))
-		{
-			scope(failure) writefln("Error reading file %s:", de.name);
-			foreach (i, line; de.readText.splitLines)
-			{
-				auto oline = line;
-				scope(failure) writefln("Error reading line %d (%(%s%)):", i+1, [oline]);
-				if (line.strip.length == 0 || line[0] == '#')
-					continue;
-				Node n = root;
-				size_t depth;
-				while (line.skipOver("\t"))
-					n = stack[min(depth++, $-1)]; // TODO: data bug?
-				while (line.length)
-				{
-					auto w = readWord(line);
-					while (line.skipOver(" ")) {}
-					auto pNext = w in n.children;
-					if (!pNext)
-					{
-						n.children[w] = new Node;
-						pNext = w in n.children;
-					}
-					n = *pNext;
-				}
-				stack = stack[0..min(depth, $)] ~ n;
-			}
-		}
-	}
+		root = loadData(dirEntries(gameDir ~ "/data", "*.txt", SpanMode.depth).map!(de => de.name).array);
 	return root;
 }
 
