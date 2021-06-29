@@ -46,21 +46,21 @@ import data;
 			foreach (name, node; gameData["shipyard"][shipyard])
 				itemKnown.add(name);
 
-	void addFromSave(string item)
+	void addFromSave(string item, string where)
 	{
 		if (item !in itemKnown)
 		{
-			stderr.writefln("Note: adding item from save which was not found in any known outfitters/shipyards: %s", item);
+			stderr.writefln("Note: adding item from %s which was not found in any known outfitters/shipyards: %s", where, item);
 			itemKnown.add(item);
 		}
 	}
 
 	foreach (shipName, shipNode; saveData["ship"])
 	{
-		addFromSave(shipName);
+		addFromSave(shipName, "ship");
 		if (auto outfits = shipNode.get("outfits", null))
 			foreach (name, node; outfits)
-				addFromSave(name);
+				addFromSave(name, "ship outfit");
 	}
 
 	foreach (line; "parts-overrides.txt".readText.splitLines)
