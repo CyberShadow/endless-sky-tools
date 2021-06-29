@@ -13,33 +13,66 @@ import ae.utils.aa;
 
 final class Node
 {
-	OrderedMap!(string, Node) children;
-	alias children this;
+	string[] key;
+	Node[] children;
+	// alias children this;
 
-	@property string value() const
+	@property string value() const { enforce(!children, "Value has children"); return key[1 .. $].sole; }
+	// {
+	// 	enforce(children.length == 1, "Multiple values here");
+	// 	auto pair = children.byKeyValue.front;
+	// 	enforce(pair.value.children.length == 0);
+	// 	return pair.key;
+	// }
+	bool isValue() const { return children.length == 0 && key.length == 2; }
+
+	// string onlyChildName() const { enforce(children.length == 1); return children.byKey.front; }
+	// Node onlyChild() { enforce(children.length == 1); return children.byValue.front; }
+	// // inout(Node) onlyChild() inout { enforce(children.length == 1); return children.byValue.front; }
+
+	inout(Node)[] all(string[] key ...) inout
 	{
-		enforce(children.length == 1, "Multiple values here");
-		auto pair = children.byKeyValue.front;
-		enforce(pair.value.children.length == 0);
-		return pair.key;
+		inout(Node)[] result;
+		foreach (n; children)
+			if (n.key == key)
+				result ~= n;
+		return result;
 	}
-	bool isValue() const { return children.length == 1 && children.byValue.front.children.length == 0; }
+	inout(Node) opIndex(string[] key ...) inout { return all(key).sole; }
+	override string toString() const { return format("%-(%s%)", children.map!(c => format("%(%s%)", [c.key]) ~ "\n" ~ c.toString().indent())); }
 
-	string onlyChildName() const { enforce(children.length == 1); return children.byKey.front; }
-	Node onlyChild() { enforce(children.length == 1); return children.byValue.front; }
-	// inout(Node) onlyChild() inout { enforce(children.length == 1); return children.byValue.front; }
+	inout(Node)* opBinaryRight(string op : "in")(string[] key ...) inout
+	{
+		auto found = all(key);
+		if (!found.length)
+			return null;
+		return &found.sole;
+	}
 
-	inout(Node) opIndex(string s) inout { return children[s]; }
-	override string toString() const { return format("%-(%s%)", children.byKeyValue.map!(kv => format("%(%s%)", [kv.key]) ~ "\n" ~ kv.value.toString().indent())); }
+	inout(Node)[] withPrefix(string[] key ...) inout
+	{
+		inout(Node)[] result;
+		foreach (n; children)
+			if (n.key.startsWith(key))
+				result ~= n;
+		return result;
+	}
 
 	void iterLeaves(void delegate(string[]) callback, string[] stack = null) const
 	{
+		stack ~= key;
 		if (!children)
 			callback(stack);
 		else
-			foreach (name, value; children)
-				value.iterLeaves(callback, stack ~ name);
+			foreach (node; children)
+				node.iterLeaves(callback, stack);
 	}
+}
+
+ref T sole(T)(T[] items)
+{
+	enforce(items.length == 1, "Expected 1 %s but have %d".format(T.stringof, items.length));
+	return items[0];
 }
 
 enum gameDir = "game"; // clone or create symlink as necessary
@@ -61,19 +94,15 @@ Node loadData(string[] fileNames)
 			size_t depth;
 			while (line.skipOver("\t"))
 				n = stack[min(depth++, $-1)]; // TODO: data bug?
+			auto node = new Node;
 			while (line.length)
 			{
 				auto w = readWord(line);
 				while (line.skipOver(" ")) {}
-				auto pNext = w in n.children;
-				if (!pNext)
-				{
-					n.children[w] = new Node;
-					pNext = w in n.children;
-				}
-				n = *pNext;
+				node.key ~= w;
 			}
-			stack = stack[0..min(depth, $)] ~ n;
+			n.children ~= node;
+			stack = stack[0..min(depth, $)] ~ node;
 		}
 	}
 	return root;
@@ -124,6 +153,6 @@ private string readWord(ref string s)
 version(test_data)
 void main()
 {
-	writeln(gameData["ship"]["Argosy"].children.keys);
-	writeln(gameData["ship"]["Argosy"]);
+	writeln(gameData[["ship", "Argosy"]].children.map!(c => c.key));
+	writeln(gameData[["ship", "Argosy"]]);
 }

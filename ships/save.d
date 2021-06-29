@@ -1,4 +1,5 @@
 import std.algorithm.searching;
+import std.conv : text;
 import std.file;
 import std.stdio : stderr;
 import std.string;
@@ -22,29 +23,27 @@ import data;
 		return result;
 
 	OrderedSet!string planetKnown;
-	foreach (name, node; saveData()["visited planet"].children)
-		planetKnown.add(name);
+	foreach (node; saveData.withPrefix("visited planet"))
+		planetKnown.add(node.key[1 .. $].sole);
 
 	OrderedSet!string outfitterKnown; // outfitter categories
 	foreach (planet; planetKnown.byKey)
-		if (auto outfitter = gameData["planet"][planet].get("outfitter", null))
-			foreach (name, node; outfitter)
-				outfitterKnown.add(name);
+		foreach (outfitter; gameData["planet", planet].withPrefix("outfitter"))
+			outfitterKnown.add(outfitter.key[1 .. $].sole);
 
 	alias result itemKnown;
 	foreach (outfitter; outfitterKnown.byKey)
-			foreach (name, node; gameData["outfitter"][outfitter])
-				itemKnown.add(name);
+		foreach (node; gameData["outfitter", outfitter].children)
+			itemKnown.add(node.key.sole);
 
 	OrderedSet!string shipyardKnown; // shipyard categories
 	foreach (planet; planetKnown.byKey)
-		if (auto shipyard = gameData["planet"][planet].get("shipyard", null))
-			foreach (name, node; shipyard)
-				shipyardKnown.add(name);
+		foreach (shipyard; gameData["planet", planet].withPrefix("shipyard"))
+			shipyardKnown.add(shipyard.key[1 .. $].sole);
 
 	foreach (shipyard; shipyardKnown.byKey)
-			foreach (name, node; gameData["shipyard"][shipyard])
-				itemKnown.add(name);
+		foreach (node; gameData["shipyard", shipyard].children)
+			itemKnown.add(node.key.sole);
 
 	void addFromSave(string item, string where)
 	{
@@ -55,32 +54,28 @@ import data;
 		}
 	}
 
-	foreach (shipName, shipNode; saveData["ship"])
+	foreach (ship; saveData.withPrefix("ship"))
 	{
-		addFromSave(shipName, "ship");
-		if (auto outfits = shipNode.get("outfits", null))
-			foreach (name, node; outfits)
-				addFromSave(name, "ship outfit");
+		addFromSave(ship.key[1 .. $].sole, "ship");
+		foreach (outfit; ship.withPrefix("outfits"))
+			addFromSave(outfit.key.sole, "ship outfit");
 	}
 
-	if (auto pStorage = "storage" in saveData)
-	{
-		foreach (name1, node1; *pStorage)
-			if (name1 == "planet")
-				foreach (planetName, planetNode; node1)
-					foreach (name2, node2; planetNode)
-						if (name2 == "cargo")
-							foreach (name3, node3; node2)
-								if (name3 == "outfits")
-									foreach (name, node; node3)
-										addFromSave(name, "planetary storage outfit");
-								else
-									stderr.writeln("Unknown storage item kind: " ~ name3);
+	foreach (storage; saveData.all("storage"))
+		foreach (storageLocation; storage.children)
+			if (storageLocation.key.startsWith("planet"))
+				foreach (storageKind; storageLocation.children)
+					if (storageKind.key == ["cargo"])
+						foreach (itemKind; storageKind.children)
+							if (itemKind.key == ["outfits"])
+								foreach (outfit; itemKind.children)
+									addFromSave(outfit.key[0], "planetary storage outfit"); // key[1] is count
+							else
+								stderr.writeln("Unknown storage item kind: " ~ itemKind.key.text);
 						else
-							stderr.writeln("Unknown storage kind: " ~ name2);
+							stderr.writeln("Unknown storage kind: " ~ storageKind.key.text);
 			else
-				stderr.writeln("Unknown storage location: " ~ name1);
-	}
+				stderr.writeln("Unknown storage location: " ~ storageLocation.key.text);
 
 	foreach (line; "parts-overrides.txt".readText.splitLines)
 	{
@@ -105,9 +100,10 @@ import data;
 	return result;
 }
 
-// void main()
-// {
-// 	import std.stdio; writeln(knownItems.byKey);
-// }
+version (main_save)
+void main()
+{
+	import std.stdio; writeln(knownItems.byKey);
+}
 
 // "

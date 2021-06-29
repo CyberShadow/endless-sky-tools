@@ -79,17 +79,14 @@ struct Item
 
 	void fromAttributes(in Node node)
 	{
-		foreach (Attribute attr; Attribute.init .. enumLength!Attribute)
-		{
-			auto name = attributeNames[attr];
-			auto pNode = name in node;
-			if (pNode)
-			{
-				auto value = (*pNode).value;
-				scope(failure) writefln("Error parsing attribute %(%s%) with value %(%s%)", [name], [value]);
-				attributes[attr] = value.strip;
-			}
-		}
+		foreach (child; node.children)
+			foreach (Attribute attr; Attribute.init .. enumLength!Attribute)
+				if (child.key[0] == attributeNames[attr])
+				{
+					auto value = child.key[1 .. $].sole;
+					scope(failure) writefln("Error parsing attribute %(%s%) with value %(%s%)", [name], [value]);
+					attributes[attr] = value.strip;
+				}
 	}
 }
 
@@ -103,56 +100,53 @@ ShipData getShipData(bool all = false)
 {
 	//all = true;
 	ShipData result;
-	foreach (name, node; gameData["ship"])
+	foreach (node; gameData.withPrefix("ship"))
 	{
-		scope(failure) stderr.writeln("Error with ship: " ~ name);
+		scope(failure) stderr.writeln("Error with ship: " ~ node.key.text);
+		if (node.key.length > 2)
+			continue; // variant
+		auto name = node.key[1];
 		if (!all && name !in knownItems) continue;
 		Item item;
 		item.name = name;
-		if (auto pNode = "attributes" in node)
-			item.fromAttributes(*pNode);
-		else
-		{
-			stderr.writeln("Skipping ship without attributes (variant?): ", name);
-			continue;
-		}
-		if (auto pNode = "gun" in node)
-			item.attributes[Attribute.gunPorts] = (){ int count; pNode.iterLeaves((_){count++;}); return count; }();
-		if (auto pNode = "turret" in node)
-			item.attributes[Attribute.turretMounts] = (){ int count; pNode.iterLeaves((_){count++;}); return count; }();
+		item.fromAttributes(node["attributes"]);
+		item.attributes[Attribute.gunPorts] = node.withPrefix("gun").length;
+		item.attributes[Attribute.turretMounts] = node.withPrefix("turret").length;
 		result.items ~= item;
 	}
 	result.numShips = result.items.length.to!uint;
 
-	foreach (name, node; gameData["outfit"])
+outfit:
+	foreach (node; gameData.withPrefix("outfit"))
 	{
-		scope(failure) writefln("Error parsing outfit %(%s%):", [name]);
+		scope(failure) writefln("Error parsing outfit %(%s%):", node.key);
+		auto name = node.key[1 .. $].sole;
 		if (!all && name !in knownItems) continue;
 		Item item;
 		item.name = name;
 		item.fromAttributes(node);
-		if (auto pStr = "category" in node)
+		foreach (category; node.withPrefix("category"))
 		{
-			if (pStr.value.isOneOf("Hand to Hand", "Ammunition", "Special"))
-				continue;
-			item.category = pStr.value;
+			if (category.value.isOneOf("Hand to Hand", "Ammunition", "Special"))
+				continue outfit;
+			item.category = category.value;
 		}
-		if (auto pStr = "installable" in node)
-			if (Value(pStr.value) < 0)
-				continue;
-		if (auto pWeapon = "weapon" in node)
+		foreach (installable; node.withPrefix("installable"))
+			if (installable.key[1 .. $].sole.Value < 0)
+				continue outfit;
+		foreach (weapon; node.all("weapon"))
 		{
-			if ("ammo" in *pWeapon)
+			if ("ammo" in weapon)
 				continue; // TODO: tons / cost of ammo per unit of time / damage?
-			if (auto pVelocity = "velocity" in *pWeapon)
+			if (auto pVelocity = "velocity" in weapon)
 				item.weaponVelocity = Value(pVelocity.value);
 			foreach (attribute; [Attribute.antiMissile])
-				if (auto pValue = attributeNames[attribute] in *pWeapon)
+				if (auto pValue = attributeNames[attribute] in weapon)
 					item.attributes[attribute] += Value((*pValue).value.strip);
 
 			// Estimate effective DPS accounting for accuracy and projectile travel time
 			Value accMultiplier = 1;
-			if (auto pStr = "inaccuracy" in *pWeapon)
+			if (auto pStr = "inaccuracy" in weapon)
 				accMultiplier = (100 - min(Value(100), Value(pStr.value) * 4)) / 100;
 			auto travelTime = 1 / max(Value(1), item.weaponVelocity * 3 / 2);
 			auto speedMultiplier = 1 - travelTime;
@@ -160,13 +154,13 @@ ShipData getShipData(bool all = false)
 			auto projMultiplier = accMultiplier * speedMultiplier;
 			debug(weapon_multiplier) writefln("%s\t%s\t%s\t%s", accMultiplier, speedMultiplier, projMultiplier, name);
 
-			if (auto pReload = "reload" in *pWeapon)
+			if (auto pReload = "reload" in weapon)
 			{
-				if (auto pSD = "shield damage" in *pWeapon)
+				if (auto pSD = "shield damage" in weapon)
 					item.attributes[Attribute.shieldDamage] = Value(pSD.value) / Value(pReload.value) * projMultiplier;
-				if (auto pFE = "firing energy" in *pWeapon)
+				if (auto pFE = "firing energy" in weapon)
 					item.attributes[Attribute.firingEnergy] = Value(pFE.value) / Value(pReload.value);
-				if (auto pFE = "firing heat" in *pWeapon)
+				if (auto pFE = "firing heat" in weapon)
 					item.attributes[Attribute.firingHeat  ] = Value(pFE.value) / Value(pReload.value);
 			}
 		}

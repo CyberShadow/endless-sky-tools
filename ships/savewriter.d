@@ -26,17 +26,17 @@ void createSave(string fn, Config[] configs)
 	foreach (i, config; configs)
 	{
 		auto ship = shipData.items[config.items[0]];
-		auto shipNode = gameData["ship"][ship.name];
+		auto shipNode = gameData["ship", ship.name];
 		f.writefln("ship %s", ship.name.quote);
 		f.writefln("\tname %s", "%s Test %d".format(ship.name, i+1).quote);
 		f.writefln("\tsystem %s", system.quote);
 		f.writefln("\tplanet %s", planet.quote);
 		if (auto pAttr = "attributes" in shipNode)
 		{
-			if (auto pStr = "required crew" in pAttr.children) f.writefln("\tcrew %s", pStr.value);
-			if (auto pStr = "fuel capacity" in pAttr.children) f.writefln("\tfuel %s", pStr.value);
-			if (auto pStr = "shields"       in pAttr.children) f.writefln("\tshields %s", pStr.value);
-			if (auto pStr = "hull"          in pAttr.children) f.writefln("\thull %s", pStr.value);
+			if (auto pStr = "required crew" in *pAttr) f.writefln("\tcrew %s", pStr.value);
+			if (auto pStr = "fuel capacity" in *pAttr) f.writefln("\tfuel %s", pStr.value);
+			if (auto pStr = "shields"       in *pAttr) f.writefln("\tshields %s", pStr.value);
+			if (auto pStr = "hull"          in *pAttr) f.writefln("\thull %s", pStr.value);
 		}
 		f.writeln();
 
@@ -44,11 +44,9 @@ void createSave(string fn, Config[] configs)
 		auto guns = outfits.filter!(item => item.attributes[Attribute.gunPorts] < 0).array;
 		auto turrets = outfits.filter!(item => item.attributes[Attribute.turretMounts] < 0).array;
 
-		void dump(string name, in Node node, int depth)
+		void dump(in Node node, int depth)
 		{
-			if (node.isValue)
-				f.writefln("%s%s %s", '\t'.repeat(depth), name.quote, node.value.quote);
-			else
+			auto name = node.key[0];
 			if (name == "gun" || name == "engine" || name == "turret" || name == "explode")
 			{
 				node.iterLeaves(
@@ -59,20 +57,23 @@ void createSave(string fn, Config[] configs)
 						else
 						if (name == "turret")
 							path = path[0..2] ~ (turrets.length ? [turrets.shift.name] : []);
-						f.writefln("%s%s%-( %s%)", '\t'.repeat(depth), name.quote, path.map!quote);
+						f.writefln("%s%-(%s %)", '\t'.repeat(depth), path.map!quote);
 					});
 			}
 			else
+			if (node.isValue)
+				f.writefln("%s%-(%s %)", '\t'.repeat(depth), node.key.map!quote);
+			else
 			{
 				f.writefln("%s%s", '\t'.repeat(depth), name.quote);
-				foreach (childName, childNode; node.children)
-					dump(childName, childNode, depth + 1);
+				foreach (childNode; node.children)
+					dump(childNode, depth + 1);
 			}
 		}
 
-		foreach (name, value; shipNode.children)
-			if (name != "outfits")
-				dump(name, value, 1);
+		foreach (node; shipNode.children)
+			if (node.key[0] != "outfits")
+				dump(node, 1);
 		f.writefln("\toutfits");
 		foreach (item; outfits)
 			f.writefln("\t\t%s", item.name.quote);
