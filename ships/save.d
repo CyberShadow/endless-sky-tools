@@ -63,6 +63,25 @@ import data;
 				addFromSave(name, "ship outfit");
 	}
 
+	if (auto pStorage = "storage" in saveData)
+	{
+		foreach (name1, node1; *pStorage)
+			if (name1 == "planet")
+				foreach (planetName, planetNode; node1)
+					foreach (name2, node2; planetNode)
+						if (name2 == "cargo")
+							foreach (name3, node3; node2)
+								if (name3 == "outfits")
+									foreach (name, node; node3)
+										addFromSave(name, "planetary storage outfit");
+								else
+									stderr.writeln("Unknown storage item kind: " ~ name3);
+						else
+							stderr.writeln("Unknown storage kind: " ~ name2);
+			else
+				stderr.writeln("Unknown storage location: " ~ name1);
+	}
+
 	foreach (line; "parts-overrides.txt".readText.splitLines)
 	{
 		if (!line.length || line.startsWith("#"))
